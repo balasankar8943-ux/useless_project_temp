@@ -985,10 +985,9 @@
         <!-- Live Demo Presets (Zero food needed on stage!) -->
         <div style="font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem;">STAGE PRESET SAMPLES:</div>
         <div class="preset-strip">
-          <div class="preset-pill" data-preset="hostel">🧪 Standard Hostel Mess Sambar (98% Water)</div>
-          <div class="preset-pill" data-preset="realsambar">⭐ Certified Real Sambar (Golden Reference)</div>
-          <div class="preset-pill" data-preset="drumstick">🌿 The Drumstick Miracle (Solid Biomass)</div>
-          <div class="preset-pill" data-preset="water">🚰 Municipal Tap Water (Control Sample)</div>
+          <div class="preset-pill" data-preset="realsambar">⭐ Authentic Sambar Benchmark (Thick Red-Orange)</div>
+          <div class="preset-pill" data-preset="morucurry">🥣 Moru Curry / Pulissery (Yellow Imposter)</div>
+          <div class="preset-pill" data-preset="hostel">🚰 Watery Mess Sambar (98% Water)</div>
         </div>
       </div>
     </section>
@@ -1406,28 +1405,29 @@
         ctx.beginPath();
         ctx.arc(200, 180, 25, 0, Math.PI);
         ctx.stroke();
-      } else if (type === 'drumstick') {
-        // Darker, thick golden brown with an actual green drumstick chunk
-        ctx.fillStyle = "#b8782a";
+      } else if (type === 'morucurry') {
+        // Bright creamy turmeric-yellow buttermilk base
+        ctx.fillStyle = "#e5c842";
+        ctx.fillRect(0, 0, 640, 480);
+        // Creamy yogurt gradient
+        const grad = ctx.createRadialGradient(320, 240, 40, 320, 240, 320);
+        grad.addColorStop(0, "rgba(255, 238, 120, 0.95)");
+        grad.addColorStop(1, "rgba(215, 185, 45, 0.90)");
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 640, 480);
         
-        // Solid Drumstick entity
-        ctx.fillStyle = "#335520";
-        ctx.fillRect(260, 190, 120, 40);
-        ctx.fillStyle = "#49772d";
-        ctx.fillRect(270, 195, 100, 12);
-
-        // Multiple mustard seeds & tomato chunks
-        ctx.fillStyle = "#7a2214";
+        // Green chili slice & curry leaves
+        ctx.fillStyle = "#2d5a1b";
         ctx.beginPath();
-        ctx.arc(180, 280, 18, 0, Math.PI * 2);
+        ctx.ellipse(320, 240, 24, 10, Math.PI / 4, 0, Math.PI * 2);
         ctx.fill();
-      } else if (type === 'water') {
-        // Plain crystal clear tap water
-        ctx.fillStyle = "#4a6984";
-        ctx.fillRect(0, 0, 640, 480);
-        ctx.fillStyle = "rgba(255,255,255,0.1)";
-        ctx.fillRect(0, 0, 640, 240);
+
+        // Mustard seeds
+        ctx.fillStyle = "#1e1e1e";
+        ctx.beginPath();
+        ctx.arc(280, 220, 3.5, 0, Math.PI * 2);
+        ctx.arc(360, 260, 3, 0, Math.PI * 2);
+        ctx.fill();
       } else if (type === 'realsambar') {
         const refImg = new Image();
         refImg.onload = () => {
@@ -1459,7 +1459,8 @@
       const total = d.length / 4;
       let sumLuma = 0;
       let sumR = 0, sumG = 0, sumB = 0;
-      let warmPixels = 0;
+      let redOrangePixels = 0;
+      let yellowMoruPixels = 0;
       let vegPixels = 0;
 
       for (let i = 0; i < d.length; i += 4) {
@@ -1470,9 +1471,16 @@
         sumG += g;
         sumB += b;
 
-        // Rich authentic sambar is warm golden-orange-red
-        if (r > 100 && g > 50 && b < 120 && r >= g && (g > b * 1.1)) {
-          warmPixels++;
+        // Authentic Sambar is DEEP REDDISH-ORANGE:
+        // R is heavily dominant over G (tamarind + chilli + toor dal: R-G >= 30, R >= G*1.22, B suppressed)
+        if (r > 120 && g > 40 && b < 110 && (r - g >= 30) && (r >= g * 1.22) && (r >= b * 2.2)) {
+          redOrangePixels++;
+        }
+
+        // Moru Curry / Pulissery is BRIGHT TURMERIC-YELLOW / BUTTERMILK:
+        // High Green close to Red (R - G < 28), high luminance, low red chilli tamarind
+        if (r > 140 && g > 130 && (r - g < 28) && (r < g * 1.22) && b > 35) {
+          yellowMoruPixels++;
         }
 
         // Vegetable biomass: dark chunks (muringakka, shallots, tomato skin)
@@ -1493,11 +1501,35 @@
       }
       const stdDev = Math.sqrt(sumVar / total);
 
+      // Hue calculation (0 to 360)
+      let max = Math.max(avgR, avgG, avgB);
+      let min = Math.min(avgR, avgG, avgB);
+      let hue = 0;
+      if (max !== min) {
+        let delta = max - min;
+        if (max === avgR) {
+          hue = ((avgG - avgB) / delta + (avgG < avgB ? 6 : 0)) * 60;
+        } else if (max === avgG) {
+          hue = ((avgB - avgR) / delta + 2) * 60;
+        } else {
+          hue = ((avgR - avgG) / delta + 4) * 60;
+        }
+      }
+
+      const r_g_diff = avgR - avgG;
+      const r_g_ratio = avgR / Math.max(avgG, 1);
+      const r_b_ratio = avgR / Math.max(avgB, 1);
+
       return {
         avgR, avgG, avgB,
         meanLuma,
         stdDev,
-        warmRatio: warmPixels / total,
+        hue,
+        r_g_diff,
+        r_g_ratio,
+        r_b_ratio,
+        redOrangeRatio: redOrangePixels / total,
+        yellowMoruRatio: yellowMoruPixels / total,
         vegRatio: vegPixels / total
       };
     }
@@ -1524,11 +1556,12 @@
 
     function compareAgainstReference(sampleFeatures) {
       if (!sampleFeatures) return 0;
+      // Golden Reference: R=183.8, G=132.2, B=37.8, R/G=1.39, R-G=51.6, stdDev=44
       const ref = referenceFeatures || {
-        avgR: 188, avgG: 124, avgB: 48,
-        meanLuma: 134,
+        avgR: 184, avgG: 132, avgB: 38,
+        meanLuma: 135,
         stdDev: 44,
-        warmRatio: 0.74,
+        redOrangeRatio: 0.76,
         vegRatio: 0.16
       };
 
@@ -1537,24 +1570,35 @@
       const dg = (sampleFeatures.avgG - ref.avgG) / 255;
       const db = (sampleFeatures.avgB - ref.avgB) / 255;
       const colorDist = Math.sqrt(dr*dr + dg*dg + db*db);
-      const colorScore = Math.max(0, 1 - (colorDist / 0.72)) * 40;
+      let colorScore = Math.max(0, 1 - (colorDist / 0.52)) * 40;
 
-      // 2. Texture & dal particulate density
-      const texRatio = Math.min(sampleFeatures.stdDev / (ref.stdDev || 40), 1.25);
-      const textureScore = Math.min(texRatio * 32, 32);
+      // 2. Red Dominance Check (Tamarind / Chilli Tadka)
+      let redDominanceScore = 0;
+      if (sampleFeatures.r_g_diff >= 42) {
+        redDominanceScore = 25;
+      } else if (sampleFeatures.r_g_diff >= 32) {
+        redDominanceScore = 14;
+      } else {
+        redDominanceScore = 0;
+      }
 
-      // 3. Warm Sambar Chroma ratio
-      const warmRatio = Math.min(sampleFeatures.warmRatio / (ref.warmRatio || 0.7), 1.0);
-      const chromaScore = warmRatio * 20;
+      // 3. Texture / Toor Dal Particulate Variance
+      const texRatio = Math.min(sampleFeatures.stdDev / (ref.stdDev || 40), 1.2);
+      const textureScore = Math.min(texRatio * 20, 20);
 
-      // 4. Vegetable Presence
-      const vegScore = Math.min((sampleFeatures.vegRatio / (ref.vegRatio || 0.14)) * 8, 8);
+      // 4. Vegetable Biomass
+      const vegScore = Math.min((sampleFeatures.vegRatio / (ref.vegRatio || 0.14)) * 15, 15);
 
-      let match = Math.round(colorScore + textureScore + chromaScore + vegScore);
+      let match = Math.round(colorScore + redDominanceScore + textureScore + vegScore);
 
-      // Heavy penalty for non-sambar (pure water, room, blue/grey, dark)
-      if (sampleFeatures.avgB >= sampleFeatures.avgR * 0.9 || (sampleFeatures.avgR < 65 && sampleFeatures.avgG < 65 && sampleFeatures.avgB < 65)) {
-        match = Math.min(match, 10);
+      // Severe Moru Curry Penalty (Curd / Buttermilk yellow)
+      if (sampleFeatures.yellowMoruRatio > 0.28 || (sampleFeatures.avgG > 130 && sampleFeatures.r_g_diff < 28)) {
+        match = Math.min(match, 18);
+      }
+
+      // Severe Non-Food / Clear Water Penalty
+      if (sampleFeatures.avgB >= sampleFeatures.avgR * 0.85 || (sampleFeatures.avgR < 65 && sampleFeatures.avgG < 65 && sampleFeatures.avgB < 65)) {
+        match = Math.min(match, 8);
       }
 
       return Math.min(100, Math.max(0, match));
@@ -1591,14 +1635,35 @@
           imgData = ctx.getImageData(startX, startY, boxW, boxH);
         } catch (e) {}
 
-        const sampleFeatures = computeFeaturesFromData(imgData);
+        const sampleFeatures = computeFeaturesFromData(imgData) || {
+          avgR: 120, avgG: 120, avgB: 120, r_g_diff: 0, r_g_ratio: 1, r_b_ratio: 1, hue: 0, stdDev: 5, redOrangeRatio: 0, yellowMoruRatio: 0, vegRatio: 0
+        };
         let matchScore = compareAgainstReference(sampleFeatures);
 
         // Preset overrides for stage demonstrations
         if (activePreset === 'realsambar') matchScore = 96;
-        else if (activePreset === 'drumstick') matchScore = 55;
+        else if (activePreset === 'morucurry') matchScore = 18;
         else if (activePreset === 'hostel') matchScore = 24;
-        else if (activePreset === 'water') matchScore = 4;
+
+        // Determine if sample is Moru Curry / Pulissery (Yellow Buttermilk Imposter)
+        const isMoru = (
+          activePreset === 'morucurry' ||
+          (activePreset !== 'realsambar' && (
+            sampleFeatures.yellowMoruRatio > 0.26 ||
+            (sampleFeatures.avgG > 130 && sampleFeatures.r_g_diff < 28 && sampleFeatures.hue >= 38 && sampleFeatures.hue <= 68) ||
+            (sampleFeatures.avgR > 150 && sampleFeatures.avgG > 138 && sampleFeatures.r_g_ratio < 1.18)
+          ))
+        );
+
+        // Determine if sample is Genuine Authentic Sambar
+        const isRealSambar = (
+          !isMoru && (
+            activePreset === 'realsambar' ||
+            (matchScore >= 68 && sampleFeatures.r_g_diff >= 34 && sampleFeatures.r_g_ratio >= 1.25 && sampleFeatures.r_b_ratio >= 2.4 && sampleFeatures.hue >= 12 && sampleFeatures.hue <= 38)
+          )
+        );
+
+        if (isMoru) matchScore = Math.min(matchScore, 18);
 
         // Update Reference Comparison Bar in UI
         const refStatus = document.getElementById('refStatus');
@@ -1610,8 +1675,37 @@
         let trans, vegCount, visc, guilt;
         let vTitle, vDesc, compText, distText;
 
-        // Decision Tree: Detect if it is real sambar or not according to reference!
-        if (matchScore >= 65) {
+        // Strict Decision Tree
+        if (isMoru) {
+          // REJECTED: MORU CURRY DETECTED
+          if (refStatus) {
+            refStatus.innerText = "REJECTED: MORU CURRY (മോരുകറി)";
+            refStatus.style.color = "var(--red)";
+          }
+          if (refMatchBar) refMatchBar.className = "metric-fill danger";
+
+          trans = "42.0";
+          vegCount = "0 (Green Chilli / Curry Leaf only)";
+          visc = "2.80";
+          guilt = "92.0";
+          vTitle = "REJECTED: DETECTED AS MORU CURRY / PULISSERY";
+          vDesc = "ദാ കണ്ടുപിടിച്ചു! This is NOT Sambar! AI spectral detector identified bright creamy-yellow buttermilk and turmeric (R/G ratio 1.1, Hue 52°). Real Sambar strictly requires a thick red-orange tamarind and toor dal emulsion with drumstick!";
+          compText = "Buttermilk/Curd (70%), Turmeric (10%), Water (20%)";
+          distText = "Zero Tamarind / Zero Toor Dal";
+          document.getElementById('verdictBox').className = "verdict-box critical";
+          applySticker(1); // "കലങ്ങിയില്ല"
+          playSadTrombone();
+          showFullscreenMeme(1, "ഇത് മോരുകറി അല്ലേടെ?!", "സാമ്പാർ ചോദിച്ചപ്പോൾ മോരുകറി തന്ന് പറ്റിക്കാൻ നോക്കുന്നോ?!");
+
+          // Decryption Output
+          document.getElementById('decryptBadge').innerText = "REJECTED: MORU CURRY";
+          document.getElementById('decryptBadge').className = "decrypt-badge fail";
+          document.getElementById('decryptColor').innerText = "Bright Creamy Yellow (Buttermilk / Curd Base)";
+          document.getElementById('decryptDensity').innerText = "Curd / Pulissery Broth (Zero Toor Dal)";
+          document.getElementById('decryptVeg').innerText = "Green Chilli / Mustard Seeds (No Drumstick)";
+          document.getElementById('decryptMatch').innerText = `${matchScore}% (Moru Curry Imposter)`;
+          document.getElementById('decryptSummary').innerHTML = "<strong>REJECTED:</strong> Detected as <strong>Moru Curry (മോരുകറി / Pulissery)</strong>! Sambar strictly requires a thick <strong>deep red-orange body</strong> from roasted tamarind and toor dal. This sample is creamy yellow curd!";
+        } else if (isRealSambar) {
           // Confirmed Authentic Sambar
           if (refStatus) {
             refStatus.innerText = "AUTHENTIC SAMBAR (MATCHES REFERENCE)";
@@ -1624,7 +1718,7 @@
           visc = (7.8 + Math.random() * 1.2).toFixed(1);
           guilt = "0.0";
           vTitle = "GRADE AAA: AUTHENTIC REAL SAMBAR";
-          vDesc = `AI verified ${matchScore}% match against Golden Reference Sambar! Rich toor dal density, authentic turmeric warmth, and solid vegetable biomass.`;
+          vDesc = `AI verified ${matchScore}% match with Golden Reference Sambar! Confirmed thick red-orange color (R/G 1.39), rich toor dal particulate emulsion, and solid vegetable biomass.`;
           compText = "Real Toor Dal (45%), Drumstick & Veg (40%), Spices (15%)";
           distText = "0 cm (In The Bowl!)";
           document.getElementById('verdictBox').className = "verdict-box";
@@ -1635,42 +1729,13 @@
           // Decryption Output
           document.getElementById('decryptBadge').innerText = "IDENTIFIED: REAL SAMBAR";
           document.getElementById('decryptBadge').className = "decrypt-badge pass";
-          document.getElementById('decryptColor').innerText = "Thick Reddish-Orange (Toor Dal + Chilli Tadka)";
-          document.getElementById('decryptDensity').innerText = "High Viscous Emulsion (8.4 cP)";
-          document.getElementById('decryptVeg').innerText = "Solid Drumstick & Vegetables Present";
-          document.getElementById('decryptMatch').innerText = `${matchScore}% (Matches Golden Standard)`;
-          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> Verified authentic South Indian sambar! The sample exhibits a <strong>thick red-orange color</strong> with high toor dal density and real vegetable chunks, precisely matching the Golden Reference.`;
-        } else if (matchScore >= 38) {
-          // Partial Match / Passable Sambar
-          if (refStatus) {
-            refStatus.innerText = "PARTIAL MATCH (MODERATE DILUTION)";
-            refStatus.style.color = "var(--accent)";
-          }
-          if (refMatchBar) refMatchBar.className = "metric-fill";
-
-          trans = (38 + Math.random() * 12).toFixed(1);
-          vegCount = "1-2 (Vegetable Fragments)";
-          visc = (3.8 + Math.random() * 1.5).toFixed(1);
-          guilt = (15 + Math.random() * 15).toFixed(1);
-          vTitle = "GRADE B: PASSABLE HOMESTYLE SAMBAR";
-          vDesc = `Sample scored ${matchScore}% similarity to Reference Sambar. Contains detectable dal and vegetable fibers, but is significantly diluted compared to golden standard.`;
-          compText = "Diluted Dal (30%), Water (60%), Vegetables (10%)";
-          distText = "0 cm (Direct Contact)";
-          document.getElementById('verdictBox').className = "verdict-box";
-          applySticker(1); // "കലങ്ങിയില്ല"
-          playFanfare();
-          showFullscreenMeme(1, "GRADE B: PASSABLE SAMBAR", "കലങ്ങിയിട്ടുണ്ട്... കുറച്ചൊക്കെ!");
-
-          // Decryption Output
-          document.getElementById('decryptBadge').innerText = "PARTIAL SAMBAR MATCH";
-          document.getElementById('decryptBadge').className = "decrypt-badge";
-          document.getElementById('decryptColor').innerText = "Amber-Orange (Moderate Dal)";
-          document.getElementById('decryptDensity').innerText = "Medium Broth (4.2 cP)";
-          document.getElementById('decryptVeg').innerText = "1-2 Vegetable Fragments";
-          document.getElementById('decryptMatch').innerText = `${matchScore}% (Moderate Dilution)`;
-          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> Partial match. Sample has a passable amber-orange tint and minor dal particles, but lacks the rich thickness and dark red chilli/tamarind depth of authentic temple sambar.`;
-        } else if (matchScore >= 16) {
-          // Watery Mess Sambar (Not Real Sambar)
+          document.getElementById('decryptColor').innerText = "Thick Reddish-Orange (Tamarind + Chilli + Dal)";
+          document.getElementById('decryptDensity').innerText = "Heavy Viscous Dal Emulsion (8.4 cP)";
+          document.getElementById('decryptVeg').innerText = "Solid Drumstick, Shallots & Veg Chunks";
+          document.getElementById('decryptMatch').innerText = `${matchScore}% (Matches Golden Benchmark)`;
+          document.getElementById('decryptSummary').innerHTML = "<strong>DECODED:</strong> Verified authentic South Indian sambar! Sample possesses the signature <strong>thick red-orange color</strong>, high toor dal density, and real vegetable chunks.";
+        } else if (matchScore >= 16 || activePreset === 'hostel') {
+          // Watery Mess Sambar (Fails)
           if (refStatus) {
             refStatus.innerText = "FRAUD DETECTED (FAILS REFERENCE)";
             refStatus.style.color = "var(--red)";
@@ -1697,7 +1762,7 @@
           document.getElementById('decryptDensity').innerText = "Thin Watery Runoff (1.03 cP)";
           document.getElementById('decryptVeg').innerText = "0 Vegetables (Lonely seed only)";
           document.getElementById('decryptMatch').innerText = `${matchScore}% (Failed Benchmark)`;
-          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> FAILED SAMBAR TEST! The sample completely lacks the <strong>thick red-orange dal body</strong>. It is pale translucent yellow water with salt and turmeric, legally classified as bathwater.`;
+          document.getElementById('decryptSummary').innerHTML = "<strong>DECODED:</strong> FAILED SAMBAR TEST! The sample completely lacks the <strong>thick red-orange dal body</strong>. It is pale translucent yellow water with salt and turmeric, legally classified as bathwater.";
         } else {
           // Not Sambar At All (Pure water / Foreign object)
           if (refStatus) {
@@ -1726,7 +1791,7 @@
           document.getElementById('decryptDensity').innerText = "Flat Liquid / Surface (1.00 cP)";
           document.getElementById('decryptVeg').innerText = "0 (Sterile / Non-Food)";
           document.getElementById('decryptMatch').innerText = `${matchScore}% (Zero Similarity)`;
-          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> REJECTED! Zero optical resemblance to sambar. Lacks red-orange dal chroma, spices, and vegetable biomass. Identified as pure tap water or a non-food item.`;
+          document.getElementById('decryptSummary').innerHTML = "<strong>DECODED:</strong> REJECTED! Zero optical resemblance to sambar. Lacks red-orange dal chroma, spices, and vegetable biomass. Identified as pure tap water or a non-food item.";
         }
 
         // Update UI
