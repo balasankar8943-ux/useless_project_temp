@@ -108,21 +108,10 @@ graph TD
 For Hardware:
 
 # Schematic & Circuit
-![Circuit](assets/sambar_ref3.jpg)
-*Circuit Diagram: Multi-spectral optical absorption paths through translucent broth into the CMOS camera sensor array.*
-
-![Schematic](assets/sambar_ref4.jpg)
-*Optical Sensing Schematic: Wavelength separation isolating roasted chilli/tamarind amber from turmeric and buttermilk.*
+*(N/A - Pure software application, runs directly on any browser / smartphone)*
 
 # Build Photos
-![Components](assets/hostel_idli_sambar.jpg)
-*Test Components: Stainless steel mess platter, buoyant rubber idli specimens, and diluted yellow test broth.*
-
-![Build](assets/sambar_ref2.jpg)
-*Calibration Stage: Ground-truth reference pot sambar undergoing RGB baseline profiling.*
-
-![Final](assets/real_sambar.jpg)
-*Final Operational Deployment: HydroSambar real-time spectrometer HUD running in mobile browser.*
+*(N/A - Pure software application)*
 
 ### Project Demo
 # Video
