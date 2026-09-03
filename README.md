@@ -7,8 +7,8 @@
 ### Team Name: Yantrixa
 
 ### Team Members
-- Team Lead: Balasankar - [College]
-- Member 2: Karthik Raj - [College]
+- Team Lead: Balasankar - [SBCE PATTOOR]
+- Member 2: Karthik Raj - [SBCE PATTOOR]
 
 ### Project Description
 HydroSambar is an in-browser optical spectrometer and forensic food auditor built to mathematically evaluate the existential transparency of engineering hostel mess sambar. Using real-time RGB pixel decomposition and 4 Golden Sambar benchmarks, it determines whether your mess bowl contains authentic thick red-orange sambar, bright yellow moru curry, or certified lukewarm municipal bathwater seasoned with tears and warden corruption.
