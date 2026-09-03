@@ -1169,6 +1169,8 @@
             ctx.drawImage(img, 0, 0);
             video.style.display = 'none';
             canvas.style.display = 'block';
+            document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+            document.getElementById('camLabel').innerText = "CUSTOM PHOTO LOADED";
             runAudit(true);
           };
           img.src = event.target.result;
@@ -1233,6 +1235,7 @@
         const refImg = new Image();
         refImg.onload = () => {
           ctx.drawImage(refImg, 0, 0, canvas.width, canvas.height);
+          runAudit();
         };
         refImg.src = "assets/real_sambar.jpg";
       }
@@ -1249,87 +1252,149 @@
       });
     });
 
+    // Image Pixel Analysis Engine (Evaluates Real Uploaded Photos or Live Camera Snaps)
+    function analyzeSambarPixels() {
+      const startX = Math.floor(canvas.width * 0.2);
+      const startY = Math.floor(canvas.height * 0.2);
+      const boxW = Math.max(10, Math.floor(canvas.width * 0.6));
+      const boxH = Math.max(10, Math.floor(canvas.height * 0.6));
+
+      let imgData;
+      try {
+        imgData = ctx.getImageData(startX, startY, boxW, boxH);
+      } catch (e) {
+        return null;
+      }
+
+      const d = imgData.data;
+      const totalPixels = d.length / 4;
+      if (!totalPixels) return null;
+
+      let sumLuma = 0;
+      let sumR = 0, sumG = 0, sumB = 0;
+      let warmSambarPixels = 0;
+      let vegBiomassPixels = 0;
+
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i+1], b = d[i+2];
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+        sumLuma += luma;
+        sumR += r;
+        sumG += g;
+        sumB += b;
+
+        // Rich authentic sambar is warm golden-orange-red
+        if (r > 100 && g > 50 && b < 120 && r >= g && (g > b * 1.1)) {
+          warmSambarPixels++;
+        }
+
+        // Vegetable biomass: dark chunks (muringakka, shallots, tomato skin)
+        if (luma < 75 || (g > r && g > b && g > 60) || (r > 150 && g < 75 && b < 75)) {
+          vegBiomassPixels++;
+        }
+      }
+
+      const meanLuma = sumLuma / totalPixels;
+      const avgR = sumR / totalPixels;
+      const avgG = sumG / totalPixels;
+      const avgB = sumB / totalPixels;
+
+      // Variance (texture / dal particulate density)
+      let sumVar = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        const luma = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+        sumVar += (luma - meanLuma) * (luma - meanLuma);
+      }
+      const stdDev = Math.sqrt(sumVar / totalPixels);
+
+      const sambarColorRatio = warmSambarPixels / totalPixels;
+      const vegRatio = vegBiomassPixels / totalPixels;
+
+      // Real Sambar Score (0 to 100)
+      let colorScore = Math.min(sambarColorRatio * 55, 45);
+      let textureScore = Math.min((stdDev / 40) * 35, 35);
+      let vegScore = Math.min((vegRatio / 0.12) * 20, 20);
+
+      // Penalize cool tones / blue tap water / grayscale
+      if (avgB >= avgR * 0.9 || (avgR < 65 && avgG < 65 && avgB < 65)) {
+        colorScore *= 0.1;
+        textureScore *= 0.2;
+      }
+
+      const compositeScore = Math.min(100, Math.round(colorScore + textureScore + vegScore));
+
+      return {
+        score: compositeScore,
+        sambarColorRatio,
+        vegRatio,
+        stdDev,
+        meanLuma,
+        avgR, avgG, avgB
+      };
+    }
+
     // Optical Audit Engine
     function runAudit(isUploaded = false) {
       if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
       scanLine.style.display = 'block';
       playBeep(920, 0.12);
 
+      // If live camera is on and this isn't an uploaded photo or preset click, snap the frame!
+      if (!isUploaded && video.style.display !== 'none' && video.videoWidth) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+        document.getElementById('camLabel').innerText = "LIVE CAMERA SNAPSHOT";
+      }
+
       setTimeout(() => {
         scanLine.style.display = 'none';
 
-        // Read pixel data from center analysis box
-        let imgData;
-        try {
-          if (video.style.display !== 'none' && video.videoWidth) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-          }
-          const boxW = Math.floor(canvas.width * 0.4);
-          const boxH = Math.floor(canvas.height * 0.4);
-          const startX = Math.floor(canvas.width * 0.3);
-          const startY = Math.floor(canvas.height * 0.3);
-          imgData = ctx.getImageData(startX, startY, boxW, boxH);
-        } catch (e) {
-          // fallback if CORS or stream issue
-        }
-
-        // Compute photometric metrics
-        let totalLuma = 0;
-        let darkPixelCount = 0;
-        let yellowSat = 0;
-        const totalPixels = imgData ? (imgData.data.length / 4) : 1000;
-
-        if (imgData) {
-          const d = imgData.data;
-          for (let i = 0; i < d.length; i += 4) {
-            const r = d[i], g = d[i+1], b = d[i+2];
-            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-            totalLuma += luma;
-            if (luma < 60) darkPixelCount++; // potential vegetable mass
-            if (r > 130 && g > 110 && b < 80) yellowSat++; // turmeric concentration
-          }
-        }
-
-        // Active preset or live image calculations
+        // Check if user clicked a specific preset pill
         const activePreset = document.querySelector('.preset-pill.active')?.dataset.preset;
+
+        // Analyze pixels on canvas!
+        const analysis = analyzeSambarPixels() || { score: 20, vegRatio: 0, stdDev: 10 };
+        const realScore = analysis.score;
+
         let trans, vegCount, visc, guilt;
         let vTitle, vDesc, compText, distText;
 
-        if (activePreset === 'realsambar') {
-          trans = 13.5;
-          vegCount = "6+ (Drumstick, Shallots, Carrot, Chilli)";
-          visc = "8.6";
-          guilt = 0.0;
-          vTitle = "GRADE AAA: GOLDEN HERITAGE SAMBAR";
-          vDesc = "Spectrometric match confirms authentic Kerala temple-grade sambar! Dense toor dal broth heavily loaded with drumstick, ghee aroma, and coriander.";
+        // Diagnosis decision tree:
+        if (activePreset === 'realsambar' || (!activePreset && realScore >= 55)) {
+          trans = (11 + Math.random() * 6).toFixed(1);
+          vegCount = Math.max(4, Math.round(analysis.vegRatio * 32)) + "+ (Drumstick, Carrots, Shallots)";
+          visc = (7.8 + Math.random() * 1.2).toFixed(1);
+          guilt = "0.0";
+          vTitle = "GRADE AAA: AUTHENTIC REAL SAMBAR";
+          vDesc = "AI pixel analysis confirmed rich toor dal density, warm golden-orange hue, and solid vegetable biomass! Matches golden reference sambar.";
           compText = "Real Toor Dal (45%), Drumstick & Veg (40%), Spices (15%)";
-          distText = "0 cm (In The Ladle!)";
+          distText = "0 cm (In The Bowl!)";
           document.getElementById('verdictBox').className = "verdict-box";
           applySticker(4); // Suraj stunned face
           playFanfare();
-          showFullscreenMeme(4, "⭐ GOLDEN REFERENCE: REAL SAMBAR!", "എന്റെ പൊന്നോ... അത്ഭുതം! സാമ്പാർ തന്നെ!", true);
-        } else if (activePreset === 'drumstick') {
-          trans = 44.2;
-          vegCount = "1 (Muringakka)";
-          visc = "4.2";
-          guilt = 8.5;
-          vTitle = "GRADE A: UNICORN SAMBAR";
-          vDesc = "Astonishing finding. Actual vegetable fiber detected. Hostel committee may have accidentally mixed cook's personal ration.";
-          compText = "Real Toor Dal & Drumstick Biomass";
+          showFullscreenMeme(4, "⭐ REAL SAMBAR DETECTED!", "എന്റെ പൊന്നോ... അത്ഭുതം! സാമ്പാർ തന്നെ!", true);
+        } else if (activePreset === 'drumstick' || (!activePreset && realScore >= 38)) {
+          trans = (38 + Math.random() * 12).toFixed(1);
+          vegCount = "1-2 (Vegetable Fragments)";
+          visc = (3.8 + Math.random() * 1.5).toFixed(1);
+          guilt = (15 + Math.random() * 15).toFixed(1);
+          vTitle = "GRADE B: PASSABLE HOMESTYLE SAMBAR";
+          vDesc = "Moderate dal particulate detected. Some vegetable fiber present. Edible without spiritual crisis, but still leaves something to be desired.";
+          compText = "Diluted Dal (30%), Water (60%), Vegetables (10%)";
           distText = "0 cm (Direct Contact)";
           document.getElementById('verdictBox').className = "verdict-box";
-          applySticker(4); // Suraj stunned face
+          applySticker(1); // "കലങ്ങിയില്ല"
           playFanfare();
-          showFullscreenMeme(4, "GRADE A: DRUMSTICK SIGHTING", "മുരിങ്ങക്ക കണ്ടെത്തി! ഭാഗ്യം!", true);
-        } else if (activePreset === 'water') {
-          trans = 99.9;
+          showFullscreenMeme(1, "GRADE B: PASSABLE SAMBAR", "കലങ്ങിയിട്ടുണ്ട്... കുറച്ചൊക്കെ!");
+        } else if (activePreset === 'water' || (!activePreset && realScore < 16)) {
+          trans = "99.9";
           vegCount = "0 (Sterile)";
           visc = "1.00";
-          guilt = 100.0;
+          guilt = "100.0";
           vTitle = "LETHAL REHYDRATION FLUID";
-          vDesc = "Pure municipal tap water. Zero dal atoms detected across entire spectral band. Warden facing immediate tribunal.";
+          vDesc = "Zero dal spectral signature detected. The image appears to be municipal tap water or a non-sambar object. Warden facing immediate tribunal.";
           compText = "H2O + Traces of Chlorine";
           distText = "Non-existent";
           document.getElementById('verdictBox').className = "verdict-box critical";
@@ -1338,10 +1403,10 @@
           showFullscreenMeme(2, "CRITICAL ERROR: 100% TAP WATER", "കാവിലമ്മേ ശക്തി തരൂ!");
         } else {
           // Standard Hostel Mess
-          trans = 98.4;
+          trans = (92 + Math.random() * 6).toFixed(1);
           vegCount = "0.0 (1 lonely mustard seed)";
           visc = "1.03";
-          guilt = 99.4;
+          guilt = "98.6";
           vTitle = "CERTIFIED YELLOW BATHWATER";
           vDesc = "Photometric transparency index indicates warm tap water with salt, turmeric, and profound existential grief. Dal concentration: sub-atomic.";
           compText = "Hot Tap Water (98.4%), Tears (1.5%), Turmeric (0.1%)";
@@ -1349,7 +1414,7 @@
           document.getElementById('verdictBox').className = "verdict-box critical";
           applySticker(0); // "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
           playSadTrombone();
-          showFullscreenMeme(0, "FAILED: 98.4% TRANSPARENT WATER", "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ");
+          showFullscreenMeme(0, "FAILED: 96.8% TRANSPARENT WATER", "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ");
         }
 
         // Update UI
@@ -1357,10 +1422,10 @@
         document.getElementById('transBar').style.width = `${trans}%`;
 
         document.getElementById('vegVal').innerText = vegCount;
-        document.getElementById('vegBar').style.width = vegCount.startsWith('1') ? "75%" : "4%";
+        document.getElementById('vegBar').style.width = vegCount.startsWith('0') ? "4%" : (vegCount.startsWith('1') ? "45%" : "85%");
 
         document.getElementById('viscVal').innerText = visc;
-        document.getElementById('viscBar').style.width = `${Math.min(parseFloat(visc) * 20, 100)}%`;
+        document.getElementById('viscBar').style.width = `${Math.min(parseFloat(visc) * 15, 100)}%`;
 
         document.getElementById('guiltVal').innerText = `${guilt}%`;
         document.getElementById('guiltBar').style.width = `${guilt}%`;
@@ -1369,8 +1434,8 @@
         document.getElementById('verdictDesc').innerText = vDesc;
         document.getElementById('primaryComp').innerText = compText;
         document.getElementById('muringaDist').innerText = distText;
-        document.getElementById('calorieVal').innerText = activePreset === 'drumstick' ? "140 kcal" : "0.4 kcal (Thermodynamically negative)";
-        document.getElementById('leafStat').innerText = "1 floating curry leaf fighting for survival";
+        document.getElementById('calorieVal').innerText = (realScore >= 55 || activePreset === 'realsambar') ? "180 kcal (Rich Nutritional Dal)" : ((realScore >= 38 || activePreset === 'drumstick') ? "95 kcal" : "0.4 kcal (Thermodynamically negative)");
+        document.getElementById('leafStat').innerText = (realScore >= 55 || activePreset === 'realsambar') ? "Fresh coriander and ghee tadka present" : "1 floating curry leaf fighting for survival";
 
         lastAudioVerdict = `${vTitle}. ${vDesc}`;
       }, 450);
