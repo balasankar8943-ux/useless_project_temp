@@ -989,6 +989,7 @@
           <div class="preset-pill" data-preset="sambar2">⭐ Sambar 2: Pot Roasted Chilli</div>
           <div class="preset-pill" data-preset="sambar3">⭐ Sambar 3: Thick Vegetable Bowl</div>
           <div class="preset-pill" data-preset="sambar4">⭐ Sambar 4: Pressure Cooker Dal</div>
+          <div class="preset-pill" data-preset="hostel_idli">💀 Disaster Hostel Idli (Curse Warden)</div>
           <div class="preset-pill" data-preset="morucurry">🥣 Moru Curry (Yellow Imposter)</div>
           <div class="preset-pill" data-preset="hostel">🚰 Watery Mess Sambar (98% Water)</div>
         </div>
@@ -1439,6 +1440,13 @@
           runAudit();
         };
         refImg.src = `assets/sambar_ref${num}.jpg`;
+      } else if (type === 'hostel_idli') {
+        const refImg = new Image();
+        refImg.onload = () => {
+          ctx.drawImage(refImg, 0, 0, canvas.width, canvas.height);
+          runAudit();
+        };
+        refImg.src = "assets/hostel_idli_sambar.jpg";
       } else if (type === 'realsambar') {
         const refImg = new Image();
         refImg.onload = () => {
@@ -1472,6 +1480,7 @@
       let sumR = 0, sumG = 0, sumB = 0;
       let redOrangePixels = 0;
       let yellowMoruPixels = 0;
+      let whiteIdliPixels = 0;
       let vegPixels = 0;
 
       for (let i = 0; i < d.length; i += 4) {
@@ -1497,6 +1506,11 @@
         // Vegetable biomass: dark chunks (muringakka, shallots, tomato skin)
         if (luma < 75 || (g > r && g > b && g > 60) || (r > 150 && g < 75 && b < 75)) {
           vegPixels++;
+        }
+
+        // White idli surface (bright white/pale circular idli patches)
+        if (r > 170 && g > 160 && b > 125) {
+          whiteIdliPixels++;
         }
       }
 
@@ -1541,6 +1555,7 @@
         r_b_ratio,
         redOrangeRatio: redOrangePixels / total,
         yellowMoruRatio: yellowMoruPixels / total,
+        whiteIdliRatio: whiteIdliPixels / total,
         vegRatio: vegPixels / total
       };
     }
@@ -1644,19 +1659,33 @@
         else if (activePreset === 'morucurry') matchScore = 18;
         else if (activePreset === 'hostel') matchScore = 22;
 
+        // Determine if sample is the catastrophic hostel mess idli-sambar disaster
+        const isHostelIdliDisaster = (
+          activePreset === 'hostel_idli' ||
+          (
+            activePreset !== 'realsambar' && !activePreset?.startsWith('sambar') &&
+            sampleFeatures.whiteIdliRatio > 0.04 &&
+            sampleFeatures.avgB > 52 &&
+            sampleFeatures.r_b_ratio < 2.6 &&
+            sampleFeatures.r_g_diff >= 18 && sampleFeatures.r_g_diff <= 45
+          )
+        );
+
         // Determine if sample is Moru Curry / Pulissery (Yellow Buttermilk Imposter)
         const isMoru = (
-          activePreset === 'morucurry' ||
-          (activePreset !== 'realsambar' && !activePreset?.startsWith('sambar') && (
-            sampleFeatures.yellowMoruRatio > 0.24 ||
-            (sampleFeatures.avgG > 130 && sampleFeatures.r_g_diff < 28 && sampleFeatures.hue >= 38 && sampleFeatures.hue <= 68) ||
-            (sampleFeatures.avgR > 150 && sampleFeatures.avgG > 138 && sampleFeatures.r_g_ratio < 1.18)
-          ))
+          !isHostelIdliDisaster && (
+            activePreset === 'morucurry' ||
+            (activePreset !== 'realsambar' && !activePreset?.startsWith('sambar') && (
+              sampleFeatures.yellowMoruRatio > 0.24 ||
+              (sampleFeatures.avgG > 130 && sampleFeatures.r_g_diff < 28 && sampleFeatures.hue >= 38 && sampleFeatures.hue <= 68) ||
+              (sampleFeatures.avgR > 150 && sampleFeatures.avgG > 138 && sampleFeatures.r_g_ratio < 1.18)
+            ))
+          )
         );
 
         // Determine if sample is Genuine Authentic Sambar (Matches any of the 4 golden sambars!)
         const isRealSambar = (
-          !isMoru && (
+          !isHostelIdliDisaster && !isMoru && (
             activePreset?.startsWith('sambar') ||
             activePreset === 'realsambar' ||
             (
@@ -1670,7 +1699,8 @@
           )
         );
 
-        if (isMoru) matchScore = Math.min(matchScore, 18);
+        if (isHostelIdliDisaster) matchScore = 14;
+        else if (isMoru) matchScore = Math.min(matchScore, 18);
 
         // Update Reference Comparison Bar in UI
         const refStatus = document.getElementById('refStatus');
@@ -1683,7 +1713,39 @@
         let vTitle, vDesc, compText, distText;
 
         // Strict Decision Tree
-        if (isMoru) {
+        if (isHostelIdliDisaster) {
+          // LETHAL CRIME: HOSTEL IDLI SAMBAR DISASTER (CURSE WARDEN!)
+          if (refStatus) {
+            refStatus.innerText = "💀 HOSTEL MESS DISASTER (WARDEN CURSED)";
+            refStatus.style.color = "var(--red)";
+          }
+          if (refMatchBar) {
+            refMatchBar.className = "metric-fill danger";
+            refMatchBar.style.width = "14%";
+          }
+
+          trans = "88.5";
+          vegCount = "0 Dal Atoms (Rubber Idlis Submerged in Despair)";
+          visc = "1.04 cP (Drain Runoff)";
+          guilt = "100.0";
+          vTitle = "LETHAL CRIME: HOSTEL IDLI SAMBAR DISASTER";
+          vDesc = "ശാപം കിട്ടിയ ഹോസ്റ്റൽ മെസ്സ്! Look at those rubber idlis drowning in yellow despair! The idlis are harder than KTU Engineering Mathematics supplementary exam, and the sambar is warm tap water with salt, turmeric, and hostel tears. Warden is cutting mess fees to build a 3-storey villa in Munnar! If you eat this, direct admission to casualty ward.";
+          compText = "Lukewarm Tap Water (92%), Rubber Idlis (7%), Warden Corruption (1%)";
+          distText = "Directly floating in misery";
+          document.getElementById('verdictBox').className = "verdict-box critical";
+          applySticker(0); // Salim Kumar "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
+          playSadTrombone();
+          showFullscreenMeme(0, "🤬 ഹോസ്റ്റൽ മെസ്സ് തോന്ന്യാസം!", "ഈ സാമ്പാർ തിന്നുന്നതിലും ഭേദം ഫിസിക്സ് സപ്ലി എഴുതുന്നതാ! വാർഡന്റെ തലയിൽ ഇടിവെട്ടട്ടെ!");
+
+          // Decryption Output
+          document.getElementById('decryptBadge').innerText = "💀 HOSTEL SCAM DETECTED";
+          document.getElementById('decryptBadge').className = "decrypt-badge fail";
+          document.getElementById('decryptColor').innerText = "Murky Yellowish Broth (Tears + Turmeric + Tap Water)";
+          document.getElementById('decryptDensity').innerText = "Diluted Hostel Runoff (Viscosity 1.04 cP - Tap Water Level)";
+          document.getElementById('decryptVeg').innerText = "0 Dal (Submerged Rubber Idli Chunks)";
+          document.getElementById('decryptMatch').innerText = "14% (Fails Sambar Benchmark)";
+          document.getElementById('decryptSummary').innerHTML = "<strong>HOSTEL CURSE:</strong> Officially classified as <strong>Hostel Mess Biological Hazard</strong>! The idlis have the buoyancy and density of granite stones. Sambar consists of seasoned water from the hostel overhead tank. Warden facing immediate mess tribunal and student revolt!";
+        } else if (isMoru) {
           // REJECTED: MORU CURRY DETECTED
           if (refStatus) {
             refStatus.innerText = "REJECTED: MORU CURRY (മോരുകറി)";
