@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HydroSambar // Mess Food Transparency & Vegetable Auditor</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0b0d13;
+      --card: #131722;
+      --card-border: #242b3d;
+      --accent: #f59e0b;
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.25);
+      --green: #10b981;
+      --text: #f1f5f9;
+      --muted: #8392a5;
+      --hud-yellow: #fbbf24;
+      --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: rgba(19, 23, 34, 0.95);
+      border-bottom: 1px solid var(--card-border);
+      padding: 0.9rem 1.25rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .brand-logo {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 0.68rem;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .live-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--green);
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.6); opacity: 0.4; }
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+        padding: 0.9rem;
+        gap: 1rem;
+      }
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* Viewfinder Container */
+    .scanner-wrap {
+      position: relative;
+      background: #000;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      max-height: 460px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 600px) {
+      .scanner-wrap {
+        aspect-ratio: 1 / 1;
+        max-height: 380px;
+      }
+    }
+
+    #videoFeed, #canvasView {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #canvasView {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* Tactical HUD Overlay */
+    .hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1rem;
+      box-sizing: border-box;
+      z-index: 5;
+    }
+
+    .hud-corners {
+      position: absolute;
+      inset: 15%;
+      border: 1px dashed rgba(245, 158, 11, 0.35);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hud-corners::before, .hud-corners::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-color: var(--accent);
+      border-style: solid;
+    }
+    .hud-corners::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
+    .hud-corners::after { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; }
+
+    .crosshair {
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(245, 158, 11, 0.6);
+      border-radius: 50%;
+      position: relative;
+    }
+    .crosshair::before, .crosshair::after {
+      content: "";
+      position: absolute;
+      background: var(--accent);
+    }
+    .crosshair::before { width: 100%; height: 1px; top: 50%; left: 0; }
+    .crosshair::after { height: 100%; width: 1px; left: 50%; top: 0; }
+
+    .hud-telemetry {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 0.35rem 0.65rem;
+      border-radius: 4px;
+      border-left: 2px solid var(--accent);
+    }
+
+    .scan-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 10px var(--accent);
+      animation: scanMove 2.4s ease-in-out infinite;
+      display: none;
+    }
+
+    @keyframes scanMove {
+      0% { top: 10%; opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { top: 90%; opacity: 0; }
+    }
+
+    /* Camera Controls Bar */
+    .controls-bar {
+      padding: 0.9rem;
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .primary-btn-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.5rem;
+    }
+
+    button {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .btn-audit {
+      background: var(--accent);
+      color: #000;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      padding: 0.85rem 1.25rem;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .btn-audit:active {
+      transform: scale(0.98);
+    }
+
+    .btn-icon {
+      background: #1c2233;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      width: 48px;
+      height: 48px;
+      font-size: 1.1rem;
+    }
+
+    .btn-icon:hover {
+      background: #273047;
+    }
+
+    /* Preset Selection (No food needed for demo!) */
+    .preset-strip {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+      scrollbar-width: none;
+    }
+    .preset-strip::-webkit-scrollbar { display: none; }
+
+    .preset-pill {
+      background: #171c2b;
+      border: 1px solid var(--card-border);
+      color: var(--muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-pill:hover, .preset-pill.active {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Right Column: Telemetry & Diagnostic Report */
+    .report-wrap {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      overflow-y: auto;
+    }
+
+    .verdict-box {
+      background: #171d2c;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      padding: 1rem;
+      position: relative;
+    }
+
+    .verdict-box.critical {
+      border-left-color: var(--red);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .verdict-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .verdict-main {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0.25rem 0;
+      letter-spacing: -0.01em;
+    }
+
+    .verdict-desc {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    /* Gauge Meters */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    @media (max-width: 480px) {
+      .metric-grid { grid-template-columns: 1fr; }
+    }
+
+    .metric-card {
+      background: #10141f;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.85rem;
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .metric-val {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .metric-bar {
+      height: 6px;
+      background: #202738;
+      border-radius: 999px;
+      margin-top: 0.45rem;
+      overflow: hidden;
+    }
+
+    .metric-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .metric-fill.danger { background: var(--red); }
+    .metric-fill.success { background: var(--green); }
+
+    /* Absurd Lab Readings */
+    .lab-notes {
+      border-top: 1px dashed var(--card-border);
+      padding-top: 1rem;
+      font-size: 0.78rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .lab-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+    }
+
+    .lab-row span:last-child {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* Action Buttons (Share / Speak) */
+    .action-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-action {
+      flex: 1;
+      background: #1c2233;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 0.65rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-action:hover {
+      background: #252d42;
+      color: #fff;
+    }
+
+    /* Modal / Share Card */
+    .certificate-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+
+    .certificate-modal.open {
+      display: flex;
+    }
+
+    .cert-card {
+      background: #fdfaf2;
+      color: #1a1612;
+      border: 4px double #8c6716;
+      border-radius: 8px;
+      max-width: 480px;
+      width: 100%;
+      padding: 2rem;
+      font-family: Georgia, serif;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+      position: relative;
+    }
+
+    .cert-stamp {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      border: 3px solid #b91c1c;
+      color: #b91c1c;
+      font-family: var(--font-mono);
+      font-weight: 900;
+      font-size: 0.9rem;
+      padding: 0.35rem 0.85rem;
+      transform: rotate(14deg);
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .cert-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      border-bottom: 2px solid #8c6716;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .cert-body {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .cert-close {
+      background: #1a1612;
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.25rem;
+      font-family: var(--font-mono);
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Hidden inputs */
+    #fileInput { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand-wrap">
+      <div class="brand-logo">🍲</div>
+      <div>
+        <div class="brand-title">HydroSambar</div>
+        <div class="brand-sub">Department of Mess Food Dilution</div>
+      </div>
+    </div>
+    <div class="live-chip">
+      <div class="pulse-dot"></div>
+      <span>SENSOR ONLINE</span>
+    </div>
+  </header>
+
+  <!-- Main View -->
+  <main>
+    <!-- Left: Camera Scanner & Viewfinder -->
+    <section class="panel">
+      <div class="panel-header">
+        <span>OPTICAL TURBIDITY SPECTROMETER</span>
+        <span id="camLabel">READY</span>
+      </div>
+
+      <div class="scanner-wrap">
+        <video id="videoFeed" autoplay playsinline muted></video>
+        <canvas id="canvasView"></canvas>
+
+        <div class="scan-line" id="scanLine"></div>
+
+        <!-- HUD Reticle -->
+        <div class="hud">
+          <div class="hud-telemetry">
+            <span>RES: 4K SPECTRAL</span>
+            <span id="ambientLight">LUX: 420</span>
+          </div>
+
+          <div class="hud-corners">
+            <div class="crosshair"></div>
+          </div>
+
+          <div class="hud-telemetry">
+            <span id="zoomLevel">FOCUS: AUTO</span>
+            <span>ALGORITHM: KTU-MESS-v2.6</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-bar">
+        <div class="primary-btn-row">
+          <button class="btn-audit" id="auditBtn">
+            <span>🔬</span> AUDIT LIQUID
+          </button>
+          <button class="btn-icon" id="flipCamBtn" title="Switch Camera (Mobile Front/Rear)">
+            🔄
+          </button>
+          <button class="btn-icon" id="uploadBtn" title="Upload Photo">
+            📁
+          </button>
+          <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <!-- Live Demo Presets (Zero food needed on stage!) -->
+        <div style="font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem;">STAGE PRESET SAMPLES:</div>
+        <div class="preset-strip">
+          <div class="preset-pill active" data-preset="hostel">🧪 Standard Hostel Mess Sambar (98% Water)</div>
+          <div class="preset-pill" data-preset="drumstick">🌿 The Drumstick Miracle (Solid Biomass)</div>
+          <div class="preset-pill" data-preset="water">🚰 Municipal Tap Water (Control Sample)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Scientific Readout & Verdict -->
+    <section class="panel">
+      <div class="panel-header">
+        <span>SPECTROMETRIC AUDIT REPORT</span>
+        <span id="reportId">#KTU-8821</span>
+      </div>
+
+      <div class="report-wrap">
+        <!-- Main Diagnosis Box -->
+        <div class="verdict-box critical" id="verdictBox">
+          <div class="verdict-label">Official Departmental Classification</div>
+          <div class="verdict-main" id="verdictTitle">Awaiting Liquid Sample</div>
+          <div class="verdict-desc" id="verdictDesc">
+            Point camera at hostel mess bowl or tap a preset to calculate photonic transparency, drumstick probability, and tears-to-dal ratio.
+          </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>TRANSPARENCY</span>
+              <span>INDEX</span>
+            </div>
+            <div class="metric-val" id="transVal">--%</div>
+            <div class="metric-bar">
+              <div class="metric-fill danger" id="transBar"></div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>VEGETABLE BIOMASS</span>
+              <span>COUNT</span>
+            </div>
+            <div class="metric-val" id="vegVal">--</div>
+            <div class="metric-bar">
+              <div class="metric-fill" id="vegBar"></div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>VISCOSITY (cP)</span>
+              <span>FLOW DYNAMICS</span>
+            </div>
+            <div class="metric-val" id="viscVal">--</div>
+            <div class="metric-bar">
+              <div class="metric-fill danger" id="viscBar"></div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-header">
+              <span>WARDEN GUILT</span>
+              <span>CRIME INDEX</span>
+            </div>
+            <div class="metric-val" id="guiltVal">--%</div>
+            <div class="metric-bar">
+              <div class="metric-fill danger" id="guiltBar"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Lab Findings -->
+        <div class="lab-notes">
+          <div class="lab-row">
+            <span>Primary Component:</span>
+            <span id="primaryComp">--</span>
+          </div>
+          <div class="lab-row">
+            <span>Drumstick Proximity:</span>
+            <span id="muringaDist">--</span>
+          </div>
+          <div class="lab-row">
+            <span>Nutritional Value:</span>
+            <span id="calorieVal">--</span>
+          </div>
+          <div class="lab-row">
+            <span>Curry Leaf Solitude:</span>
+            <span id="leafStat">--</span>
+          </div>
+        </div>
+
+        <!-- Share & Voice Actions -->
+        <div class="action-row">
+          <button class="btn-action" id="speakBtn">🔊 Announce Verdict</button>
+          <button class="btn-action" id="certBtn">📜 Issue Certificate</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Official Fraud Certificate Modal -->
+  <div class="certificate-modal" id="certModal">
+    <div class="cert-card">
+      <div class="cert-stamp">CERTIFIED DILUTED</div>
+      <div class="cert-title">Department of Culinary Fraud</div>
+      <div class="cert-body" id="certBody">
+        This document certifies that the sample submitted under audit demonstrated a <strong>98.6% photometric transparency</strong>, failing all basic standards of dal density. 
+        <br><br>
+        <strong>Finding:</strong> Sambar is legally indistinguishable from warm tap water with seasonal depression.
+      </div>
+      <button class="cert-close" id="closeCertBtn">Dismiss Certificate</button>
+    </div>
+  </div>
+
+  <script>
+    // State
+    const video = document.getElementById('videoFeed');
+    const canvas = document.getElementById('canvasView');
+    const ctx = canvas.getContext('2d');
+    const auditBtn = document.getElementById('auditBtn');
+    const flipCamBtn = document.getElementById('flipCamBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+    const scanLine = document.getElementById('scanLine');
+    const speakBtn = document.getElementById('speakBtn');
+    const certBtn = document.getElementById('certBtn');
+    const certModal = document.getElementById('certModal');
+    const closeCertBtn = document.getElementById('closeCertBtn');
+
+    let currentFacingMode = 'environment'; // default to back camera on smartphones
+    let streamActive = false;
+    let lastAudioVerdict = "";
+
+    // Web Audio Sound Synthesizer (Zero asset dependencies!)
+    function playBeep(freq = 880, duration = 0.08) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playFailureHorn() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.linearRampToValueAtTime(80, now + 0.5);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } catch (e) {}
+    }
+
+    // Initialize Camera
+    async function startCamera() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          if (video.srcObject) {
+            video.srcObject.getTracks().forEach(t => t.stop());
+          }
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
+          });
+          video.srcObject = stream;
+          streamActive = true;
+          document.getElementById('camLabel').innerText = currentFacingMode === 'environment' ? "REAR CAM" : "FRONT CAM";
+        } catch (err) {
+          console.warn("Camera blocked or unavailable, running in preset simulator mode.", err);
+          document.getElementById('camLabel').innerText = "SIMULATOR ACTIVE";
+          drawPreset('hostel');
+        }
+      }
+    }
+
+    // Toggle Camera on Phones
+    flipCamBtn.addEventListener('click', () => {
+      currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+      startCamera();
+      if (navigator.vibrate) navigator.vibrate(30);
+    });
+
+    // Upload Picture fallback
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+            runAudit(true);
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Synthetic Canvas Sambar Presets (Guarantees reliable stage demos)
+    function drawPreset(type) {
+      canvas.width = 640;
+      canvas.height = 480;
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+
+      if (type === 'hostel') {
+        // Translucent pale yellow broth with 1 lone black dot (mustard seed)
+        ctx.fillStyle = "#d4b855";
+        ctx.fillRect(0, 0, 640, 480);
+        // Watery gradient
+        const grad = ctx.createRadialGradient(320, 240, 40, 320, 240, 300);
+        grad.addColorStop(0, "rgba(255, 235, 120, 0.8)");
+        grad.addColorStop(1, "rgba(200, 160, 40, 0.4)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 640, 480);
+        
+        // Single lone mustard seed
+        ctx.fillStyle = "#1e1e1e";
+        ctx.beginPath();
+        ctx.arc(310, 260, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Single transparent onion slice silhouette
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(200, 180, 25, 0, Math.PI);
+        ctx.stroke();
+      } else if (type === 'drumstick') {
+        // Darker, thick golden brown with an actual green drumstick chunk
+        ctx.fillStyle = "#b8782a";
+        ctx.fillRect(0, 0, 640, 480);
+        
+        // Solid Drumstick entity
+        ctx.fillStyle = "#335520";
+        ctx.fillRect(260, 190, 120, 40);
+        ctx.fillStyle = "#49772d";
+        ctx.fillRect(270, 195, 100, 12);
+
+        // Multiple mustard seeds & tomato chunks
+        ctx.fillStyle = "#7a2214";
+        ctx.beginPath();
+        ctx.arc(180, 280, 18, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (type === 'water') {
+        // Plain crystal clear tap water
+        ctx.fillStyle = "#4a6984";
+        ctx.fillRect(0, 0, 640, 480);
+        ctx.fillStyle = "rgba(255,255,255,0.1)";
+        ctx.fillRect(0, 0, 640, 240);
+      }
+    }
+
+    // Preset Pill Click Handlers
+    document.querySelectorAll('.preset-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        drawPreset(pill.dataset.preset);
+        if (navigator.vibrate) navigator.vibrate(20);
+        runAudit();
+      });
+    });
+
+    // Optical Audit Engine
+    function runAudit(isUploaded = false) {
+      if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+      scanLine.style.display = 'block';
+      playBeep(920, 0.12);
+
+      setTimeout(() => {
+        scanLine.style.display = 'none';
+
+        // Read pixel data from center analysis box
+        let imgData;
+        try {
+          if (video.style.display !== 'none' && video.videoWidth) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+          }
+          const boxW = Math.floor(canvas.width * 0.4);
+          const boxH = Math.floor(canvas.height * 0.4);
+          const startX = Math.floor(canvas.width * 0.3);
+          const startY = Math.floor(canvas.height * 0.3);
+          imgData = ctx.getImageData(startX, startY, boxW, boxH);
+        } catch (e) {
+          // fallback if CORS or stream issue
+        }
+
+        // Compute photometric metrics
+        let totalLuma = 0;
+        let darkPixelCount = 0;
+        let yellowSat = 0;
+        const totalPixels = imgData ? (imgData.data.length / 4) : 1000;
+
+        if (imgData) {
+          const d = imgData.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const r = d[i], g = d[i+1], b = d[i+2];
+            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+            totalLuma += luma;
+            if (luma < 60) darkPixelCount++; // potential vegetable mass
+            if (r > 130 && g > 110 && b < 80) yellowSat++; // turmeric concentration
+          }
+        }
+
+        // Active preset or live image calculations
+        const activePreset = document.querySelector('.preset-pill.active')?.dataset.preset;
+        let trans, vegCount, visc, guilt;
+        let vTitle, vDesc, compText, distText;
+
+        if (activePreset === 'drumstick') {
+          trans = 44.2;
+          vegCount = "1 (Muringakka)";
+          visc = "4.2";
+          guilt = 8.5;
+          vTitle = "GRADE A: UNICORN SAMBAR";
+          vDesc = "Astonishing finding. Actual vegetable fiber detected. Hostel committee may have accidentally mixed cook's personal ration.";
+          compText = "Real Toor Dal & Drumstick Biomass";
+          distText = "0 cm (Direct Contact)";
+          document.getElementById('verdictBox').className = "verdict-box";
+        } else if (activePreset === 'water') {
+          trans = 99.9;
+          vegCount = "0 (Sterile)";
+          visc = "1.00";
+          guilt = 100.0;
+          vTitle = "LETHAL REHYDRATION FLUID";
+          vDesc = "Pure municipal tap water. Zero dal atoms detected across entire spectral band. Warden facing immediate tribunal.";
+          compText = "H2O + Traces of Chlorine";
+          distText = "Non-existent";
+          document.getElementById('verdictBox').className = "verdict-box critical";
+          playFailureHorn();
+        } else {
+          // Standard Hostel Mess
+          trans = 98.4;
+          vegCount = "0.0 (1 lonely mustard seed)";
+          visc = "1.03";
+          guilt = 99.4;
+          vTitle = "CERTIFIED YELLOW BATHWATER";
+          vDesc = "Photometric transparency index indicates warm tap water with salt, turmeric, and profound existential grief. Dal concentration: sub-atomic.";
+          compText = "Hot Tap Water (98.4%), Tears (1.5%), Turmeric (0.1%)";
+          distText = "14.2 km (Nearest market)";
+          document.getElementById('verdictBox').className = "verdict-box critical";
+          playFailureHorn();
+        }
+
+        // Update UI
+        document.getElementById('transVal').innerText = `${trans}%`;
+        document.getElementById('transBar').style.width = `${trans}%`;
+
+        document.getElementById('vegVal').innerText = vegCount;
+        document.getElementById('vegBar').style.width = vegCount.startsWith('1') ? "75%" : "4%";
+
+        document.getElementById('viscVal').innerText = visc;
+        document.getElementById('viscBar').style.width = `${Math.min(parseFloat(visc) * 20, 100)}%`;
+
+        document.getElementById('guiltVal').innerText = `${guilt}%`;
+        document.getElementById('guiltBar').style.width = `${guilt}%`;
+
+        document.getElementById('verdictTitle').innerText = vTitle;
+        document.getElementById('verdictDesc').innerText = vDesc;
+        document.getElementById('primaryComp').innerText = compText;
+        document.getElementById('muringaDist').innerText = distText;
+        document.getElementById('calorieVal').innerText = activePreset === 'drumstick' ? "140 kcal" : "0.4 kcal (Thermodynamically negative)";
+        document.getElementById('leafStat').innerText = "1 floating curry leaf fighting for survival";
+
+        lastAudioVerdict = `${vTitle}. ${vDesc}`;
+      }, 450);
+    }
+
+    auditBtn.addEventListener('click', () => runAudit());
+
+    // Speech Output
+    speakBtn.addEventListener('click', () => {
+      if (!lastAudioVerdict) {
+        lastAudioVerdict = "Hostel mess sambar audit. 98.4 percent water detected. Drumstick not found.";
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(lastAudioVerdict);
+        utter.rate = 1.0;
+        utter.pitch = 0.95;
+        window.speechSynthesis.speak(utter);
+      }
+    });
+
+    // Certificate Modal
+    certBtn.addEventListener('click', () => {
+      const vTitle = document.getElementById('verdictTitle').innerText;
+      const trans = document.getElementById('transVal').innerText;
+      document.getElementById('certBody').innerHTML = `
+        This document certifies that the sample evaluated by HydroSambar Spectrometer has been officially designated as:
+        <br><br>
+        <strong style="font-size: 1.15rem; color: #b91c1c;">${vTitle}</strong>
+        <br><br>
+        • <strong>Transparency Index:</strong> ${trans}<br>
+        • <strong>Vegetable Mass:</strong> ${document.getElementById('vegVal').innerText}<br>
+        • <strong>Flow Viscosity:</strong> ${document.getElementById('viscVal').innerText} cP (Tap Water Baseline: 1.00)<br>
+        • <strong>Official Finding:</strong> Legally insufficient dal content. Sambar is classified as warm seasoned shower water under KTU Hostel Regulation 2026.
+      `;
+      certModal.classList.add('open');
+    });
+
+    closeCertBtn.addEventListener('click', () => certModal.classList.remove('open'));
+
+    // Keyboard Shortcuts for Laptops
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        runAudit();
+      } else if (e.code === 'KeyC') {
+        flipCamBtn.click();
+      }
+    });
+
+    // Start on load
+    startCamera();
+  </script>
+</body>
+</html>
