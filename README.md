@@ -4,12 +4,11 @@
 > **Hostel Mess Sambar Transparency & Vegetable Deficiency Auditor**
 
 ## Basic Details
-### Team Name: Parippu Crimes Investigation Department (PCID)
+### Team Name: Yantrixa
 
 ### Team Members
-- Team Lead: Balasankar - College of Engineering
-- Member 2: [Name] - [College]
-- Member 3: [Name] - [College]
+- Team Lead: Balasankar - [College]
+- Member 2: Karthik Raj - [College]
 
 ### Project Description
 HydroSambar is an in-browser optical spectrometer and forensic food auditor built to mathematically evaluate the existential transparency of engineering hostel mess sambar. Using real-time RGB pixel decomposition and 4 Golden Sambar benchmarks, it determines whether your mess bowl contains authentic thick red-orange sambar, bright yellow moru curry, or certified lukewarm municipal bathwater seasoned with tears and warden corruption.
@@ -139,8 +138,7 @@ For Hardware:
 
 ## Team Contributions
 - **Balasankar**: Core computer vision engine, RGB spectral feature extraction algorithms, 4-profile golden benchmark comparison logic, and system architecture.
-- **[Name 2]**: Frontend UI design, cyberpunk HUD styling, audio synthesizer engineering (Sad Trombone & Fanfare), and camera stream integration.
-- **[Name 3]**: Malayalam meme curation, comedic roast copywriting, KTU mess tribunal certificate generator, and stage demo testing.
+- **Karthik Raj**: Frontend UI design, cyberpunk HUD styling, audio synthesizer engineering (Sad Trombone & Fanfare), Malayalam meme curation, comedic roast copywriting, and stage demo testing.
 
 ---
 Made with ❤️ at TinkerHub Useless Projects 
