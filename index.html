@@ -369,6 +369,75 @@
       background: rgba(239, 68, 68, 0.08);
     }
 
+    .verdict-layout {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 540px) {
+      .verdict-layout {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+      }
+    }
+
+    .verdict-text-group {
+      flex: 1;
+    }
+
+    .verdict-sticker-box {
+      width: 105px;
+      min-width: 105px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.45rem;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none;
+    }
+
+    .verdict-sticker-box:hover {
+      transform: scale(1.06) rotate(-2deg);
+      border-color: var(--accent);
+    }
+
+    .verdict-sticker-box:active {
+      transform: scale(0.96);
+    }
+
+    .verdict-sticker {
+      width: 88px;
+      height: 88px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      background: #fff;
+      display: block;
+    }
+
+    .sticker-sub {
+      font-size: 0.65rem;
+      color: var(--accent);
+      font-weight: 800;
+      margin-top: 0.35rem;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .sticker-hint {
+      font-size: 0.55rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+      text-align: center;
+    }
+
     .verdict-label {
       font-size: 0.7rem;
       color: var(--muted);
@@ -515,19 +584,38 @@
       position: relative;
     }
 
-    .cert-stamp {
+    .cert-stamps-wrap {
       position: absolute;
-      top: 2rem;
-      right: 2rem;
+      top: 1.25rem;
+      right: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .cert-stamp {
       border: 3px solid #b91c1c;
       color: #b91c1c;
       font-family: var(--font-mono);
       font-weight: 900;
-      font-size: 0.9rem;
-      padding: 0.35rem 0.85rem;
-      transform: rotate(14deg);
+      font-size: 0.85rem;
+      padding: 0.3rem 0.65rem;
+      transform: rotate(10deg);
       border-radius: 4px;
       letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .cert-sticker-stamp {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 2px solid #1a1612;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transform: rotate(-8deg);
+      background: #fff;
+      display: block;
     }
 
     .cert-title {
@@ -646,10 +734,19 @@
       <div class="report-wrap">
         <!-- Main Diagnosis Box -->
         <div class="verdict-box critical" id="verdictBox">
-          <div class="verdict-label">Official Departmental Classification</div>
-          <div class="verdict-main" id="verdictTitle">Awaiting Liquid Sample</div>
-          <div class="verdict-desc" id="verdictDesc">
-            Point camera at hostel mess bowl or tap a preset to calculate photonic transparency, drumstick probability, and tears-to-dal ratio.
+          <div class="verdict-layout">
+            <div class="verdict-text-group">
+              <div class="verdict-label">Official Departmental Classification</div>
+              <div class="verdict-main" id="verdictTitle">Awaiting Liquid Sample</div>
+              <div class="verdict-desc" id="verdictDesc">
+                Point camera at hostel mess bowl or tap a preset to calculate photonic transparency, drumstick probability, and tears-to-dal ratio.
+              </div>
+            </div>
+            <div class="verdict-sticker-box" id="stickerContainer" title="Click to cycle meme reactions">
+              <img src="assets/kalangiyilla.jpg" id="verdictStickerImg" alt="Reaction Sticker" class="verdict-sticker">
+              <div class="sticker-sub" id="stickerSub">കലങ്ങിയില്ല</div>
+              <div class="sticker-hint">Tap to switch</div>
+            </div>
           </div>
         </div>
 
@@ -732,7 +829,10 @@
   <!-- Official Fraud Certificate Modal -->
   <div class="certificate-modal" id="certModal">
     <div class="cert-card">
-      <div class="cert-stamp">CERTIFIED DILUTED</div>
+      <div class="cert-stamps-wrap">
+        <div class="cert-stamp">CERTIFIED DILUTED</div>
+        <img src="assets/kavilamme.jpg" id="certStickerImg" class="cert-sticker-stamp" alt="Reaction Stamp">
+      </div>
       <div class="cert-title">Department of Culinary Fraud</div>
       <div class="cert-body" id="certBody">
         This document certifies that the sample submitted under audit demonstrated a <strong>98.6% photometric transparency</strong>, failing all basic standards of dal density. 
@@ -761,6 +861,42 @@
     let currentFacingMode = 'environment'; // default to back camera on smartphones
     let streamActive = false;
     let lastAudioVerdict = "";
+
+    // Malayalam Meme Reaction Stickers
+    const STICKERS = [
+      { src: "assets/kalangiyilla.jpg", sub: "കലങ്ങിയില്ല", text: "Dal has not dissolved in liquid!" },
+      { src: "assets/kavilamme.jpg", sub: "കാവിലമ്മേ ശക്തി തരൂ!", text: "Praying for digestive fortitude." },
+      { src: "assets/anjaneya.jpg", sub: "ആഞ്ജനേയ സ്വാമി...", text: "Existential defeat level critical." },
+      { src: "assets/suraj.jpg", sub: "എന്റെ പൊന്നോ...", text: "Stunned silence from the committee." }
+    ];
+
+    let currentStickerIdx = 0;
+    const verdictStickerImg = document.getElementById('verdictStickerImg');
+    const stickerSub = document.getElementById('stickerSub');
+    const stickerContainer = document.getElementById('stickerContainer');
+    const certStickerImg = document.getElementById('certStickerImg');
+
+    function applySticker(idx) {
+      currentStickerIdx = idx % STICKERS.length;
+      const st = STICKERS[currentStickerIdx];
+      if (verdictStickerImg) {
+        verdictStickerImg.style.opacity = '0.4';
+        setTimeout(() => {
+          verdictStickerImg.src = st.src;
+          verdictStickerImg.style.opacity = '1';
+        }, 100);
+      }
+      if (stickerSub) stickerSub.innerText = st.sub;
+      if (certStickerImg) certStickerImg.src = st.src;
+    }
+
+    if (stickerContainer) {
+      stickerContainer.addEventListener('click', () => {
+        applySticker(currentStickerIdx + 1);
+        if (navigator.vibrate) navigator.vibrate(25);
+        playBeep(1080, 0.05);
+      });
+    }
 
     // Web Audio Sound Synthesizer (Zero asset dependencies!)
     function playBeep(freq = 880, duration = 0.08) {
@@ -971,6 +1107,7 @@
           compText = "Real Toor Dal & Drumstick Biomass";
           distText = "0 cm (Direct Contact)";
           document.getElementById('verdictBox').className = "verdict-box";
+          applySticker(3); // Suraj stunned face
         } else if (activePreset === 'water') {
           trans = 99.9;
           vegCount = "0 (Sterile)";
@@ -981,6 +1118,7 @@
           compText = "H2O + Traces of Chlorine";
           distText = "Non-existent";
           document.getElementById('verdictBox').className = "verdict-box critical";
+          applySticker(1); // "കാവിലമ്മേ ശക്തി തരൂ!"
           playFailureHorn();
         } else {
           // Standard Hostel Mess
@@ -993,6 +1131,7 @@
           compText = "Hot Tap Water (98.4%), Tears (1.5%), Turmeric (0.1%)";
           distText = "14.2 km (Nearest market)";
           document.getElementById('verdictBox').className = "verdict-box critical";
+          applySticker(0); // "കലങ്ങിയില്ല"
           playFailureHorn();
         }
 
