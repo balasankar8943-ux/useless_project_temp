@@ -512,6 +512,69 @@
     .metric-fill.danger { background: var(--red); }
     .metric-fill.success { background: var(--green); }
 
+    /* Reference Benchmark Comparison Box */
+    .ref-comparison-box {
+      background: #111624;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin-top: 0.75rem;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+    }
+
+    .ref-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+
+    .ref-thumb-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .ref-thumb {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 2px solid var(--accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .ref-status {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .ref-match-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+
+    .ref-match-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .ref-match-val {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
     /* Absurd Lab Readings */
     .lab-notes {
       border-top: 1px dashed var(--card-border);
@@ -867,6 +930,24 @@
               <div class="sticker-sub" id="stickerSub">എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ</div>
               <div class="sticker-hint">Tap to switch</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Real Sambar Reference Benchmark Comparison -->
+        <div class="ref-comparison-box">
+          <div class="ref-header">
+            <div class="ref-thumb-wrap">
+              <img src="assets/real_sambar.jpg" alt="Golden Sambar Reference" class="ref-thumb">
+              <span>REAL SAMBAR BENCHMARK COMPARISON</span>
+            </div>
+            <span class="ref-status" id="refStatus">AWAITING IMAGE</span>
+          </div>
+          <div class="ref-match-row">
+            <div class="ref-match-label">Photometric Similarity to Golden Standard:</div>
+            <div class="ref-match-val" id="refMatchVal">--%</div>
+          </div>
+          <div class="metric-bar" style="height: 8px;">
+            <div class="metric-fill" id="refMatchBar" style="width: 0%;"></div>
           </div>
         </div>
 
@@ -1254,28 +1335,17 @@
       });
     });
 
-    // Image Pixel Analysis Engine (Evaluates Real Uploaded Photos or Live Camera Snaps)
-    function analyzeSambarPixels() {
-      const startX = Math.floor(canvas.width * 0.2);
-      const startY = Math.floor(canvas.height * 0.2);
-      const boxW = Math.max(10, Math.floor(canvas.width * 0.6));
-      const boxH = Math.max(10, Math.floor(canvas.height * 0.6));
+    // Reference Sambar Image Comparative Engine
+    let referenceFeatures = null;
 
-      let imgData;
-      try {
-        imgData = ctx.getImageData(startX, startY, boxW, boxH);
-      } catch (e) {
-        return null;
-      }
-
+    function computeFeaturesFromData(imgData) {
+      if (!imgData || !imgData.data.length) return null;
       const d = imgData.data;
-      const totalPixels = d.length / 4;
-      if (!totalPixels) return null;
-
+      const total = d.length / 4;
       let sumLuma = 0;
       let sumR = 0, sumG = 0, sumB = 0;
-      let warmSambarPixels = 0;
-      let vegBiomassPixels = 0;
+      let warmPixels = 0;
+      let vegPixels = 0;
 
       for (let i = 0; i < d.length; i += 4) {
         const r = d[i], g = d[i+1], b = d[i+2];
@@ -1287,52 +1357,92 @@
 
         // Rich authentic sambar is warm golden-orange-red
         if (r > 100 && g > 50 && b < 120 && r >= g && (g > b * 1.1)) {
-          warmSambarPixels++;
+          warmPixels++;
         }
 
         // Vegetable biomass: dark chunks (muringakka, shallots, tomato skin)
         if (luma < 75 || (g > r && g > b && g > 60) || (r > 150 && g < 75 && b < 75)) {
-          vegBiomassPixels++;
+          vegPixels++;
         }
       }
 
-      const meanLuma = sumLuma / totalPixels;
-      const avgR = sumR / totalPixels;
-      const avgG = sumG / totalPixels;
-      const avgB = sumB / totalPixels;
+      const meanLuma = sumLuma / total;
+      const avgR = sumR / total;
+      const avgG = sumG / total;
+      const avgB = sumB / total;
 
-      // Variance (texture / dal particulate density)
       let sumVar = 0;
       for (let i = 0; i < d.length; i += 4) {
         const luma = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
         sumVar += (luma - meanLuma) * (luma - meanLuma);
       }
-      const stdDev = Math.sqrt(sumVar / totalPixels);
-
-      const sambarColorRatio = warmSambarPixels / totalPixels;
-      const vegRatio = vegBiomassPixels / totalPixels;
-
-      // Real Sambar Score (0 to 100)
-      let colorScore = Math.min(sambarColorRatio * 55, 45);
-      let textureScore = Math.min((stdDev / 40) * 35, 35);
-      let vegScore = Math.min((vegRatio / 0.12) * 20, 20);
-
-      // Penalize cool tones / blue tap water / grayscale
-      if (avgB >= avgR * 0.9 || (avgR < 65 && avgG < 65 && avgB < 65)) {
-        colorScore *= 0.1;
-        textureScore *= 0.2;
-      }
-
-      const compositeScore = Math.min(100, Math.round(colorScore + textureScore + vegScore));
+      const stdDev = Math.sqrt(sumVar / total);
 
       return {
-        score: compositeScore,
-        sambarColorRatio,
-        vegRatio,
-        stdDev,
+        avgR, avgG, avgB,
         meanLuma,
-        avgR, avgG, avgB
+        stdDev,
+        warmRatio: warmPixels / total,
+        vegRatio: vegPixels / total
       };
+    }
+
+    // Profile the Golden Sambar Reference photo on launch
+    const refImageObj = new Image();
+    refImageObj.onload = () => {
+      try {
+        const offscreen = document.createElement('canvas');
+        offscreen.width = refImageObj.naturalWidth || 640;
+        offscreen.height = refImageObj.naturalHeight || 480;
+        const octx = offscreen.getContext('2d');
+        octx.drawImage(refImageObj, 0, 0);
+        const imgData = octx.getImageData(
+          Math.floor(offscreen.width * 0.2),
+          Math.floor(offscreen.height * 0.2),
+          Math.floor(offscreen.width * 0.6),
+          Math.floor(offscreen.height * 0.6)
+        );
+        referenceFeatures = computeFeaturesFromData(imgData);
+      } catch (e) {}
+    };
+    refImageObj.src = "assets/real_sambar.jpg";
+
+    function compareAgainstReference(sampleFeatures) {
+      if (!sampleFeatures) return 0;
+      const ref = referenceFeatures || {
+        avgR: 188, avgG: 124, avgB: 48,
+        meanLuma: 134,
+        stdDev: 44,
+        warmRatio: 0.74,
+        vegRatio: 0.16
+      };
+
+      // 1. Color Euclidean vector distance
+      const dr = (sampleFeatures.avgR - ref.avgR) / 255;
+      const dg = (sampleFeatures.avgG - ref.avgG) / 255;
+      const db = (sampleFeatures.avgB - ref.avgB) / 255;
+      const colorDist = Math.sqrt(dr*dr + dg*dg + db*db);
+      const colorScore = Math.max(0, 1 - (colorDist / 0.72)) * 40;
+
+      // 2. Texture & dal particulate density
+      const texRatio = Math.min(sampleFeatures.stdDev / (ref.stdDev || 40), 1.25);
+      const textureScore = Math.min(texRatio * 32, 32);
+
+      // 3. Warm Sambar Chroma ratio
+      const warmRatio = Math.min(sampleFeatures.warmRatio / (ref.warmRatio || 0.7), 1.0);
+      const chromaScore = warmRatio * 20;
+
+      // 4. Vegetable Presence
+      const vegScore = Math.min((sampleFeatures.vegRatio / (ref.vegRatio || 0.14)) * 8, 8);
+
+      let match = Math.round(colorScore + textureScore + chromaScore + vegScore);
+
+      // Heavy penalty for non-sambar (pure water, room, blue/grey, dark)
+      if (sampleFeatures.avgB >= sampleFeatures.avgR * 0.9 || (sampleFeatures.avgR < 65 && sampleFeatures.avgG < 65 && sampleFeatures.avgB < 65)) {
+        match = Math.min(match, 10);
+      }
+
+      return Math.min(100, Math.max(0, match));
     }
 
     // Optical Audit Engine
@@ -1356,67 +1466,116 @@
         // Check if user clicked a specific preset pill
         const activePreset = document.querySelector('.preset-pill.active')?.dataset.preset;
 
-        // Analyze pixels on canvas!
-        const analysis = analyzeSambarPixels() || { score: 20, vegRatio: 0, stdDev: 10 };
-        const realScore = analysis.score;
+        // Extract features from center 60% of canvas!
+        const startX = Math.floor(canvas.width * 0.2);
+        const startY = Math.floor(canvas.height * 0.2);
+        const boxW = Math.max(10, Math.floor(canvas.width * 0.6));
+        const boxH = Math.max(10, Math.floor(canvas.height * 0.6));
+        let imgData = null;
+        try {
+          imgData = ctx.getImageData(startX, startY, boxW, boxH);
+        } catch (e) {}
+
+        const sampleFeatures = computeFeaturesFromData(imgData);
+        let matchScore = compareAgainstReference(sampleFeatures);
+
+        // Preset overrides for stage demonstrations
+        if (activePreset === 'realsambar') matchScore = 96;
+        else if (activePreset === 'drumstick') matchScore = 55;
+        else if (activePreset === 'hostel') matchScore = 24;
+        else if (activePreset === 'water') matchScore = 4;
+
+        // Update Reference Comparison Bar in UI
+        const refStatus = document.getElementById('refStatus');
+        const refMatchVal = document.getElementById('refMatchVal');
+        const refMatchBar = document.getElementById('refMatchBar');
+        if (refMatchVal) refMatchVal.innerText = `${matchScore}%`;
+        if (refMatchBar) refMatchBar.style.width = `${matchScore}%`;
 
         let trans, vegCount, visc, guilt;
         let vTitle, vDesc, compText, distText;
 
-        // Diagnosis decision tree:
-        if (activePreset === 'realsambar' || (!activePreset && realScore >= 55)) {
+        // Decision Tree: Detect if it is real sambar or not according to reference!
+        if (matchScore >= 65) {
+          // Confirmed Authentic Sambar
+          if (refStatus) {
+            refStatus.innerText = "AUTHENTIC SAMBAR (MATCHES REFERENCE)";
+            refStatus.style.color = "var(--green)";
+          }
+          if (refMatchBar) refMatchBar.className = "metric-fill success";
+
           trans = (11 + Math.random() * 6).toFixed(1);
-          vegCount = Math.max(4, Math.round(analysis.vegRatio * 32)) + "+ (Drumstick, Carrots, Shallots)";
+          vegCount = Math.max(4, Math.round((sampleFeatures?.vegRatio || 0.15) * 32)) + "+ (Drumstick, Carrots, Shallots)";
           visc = (7.8 + Math.random() * 1.2).toFixed(1);
           guilt = "0.0";
           vTitle = "GRADE AAA: AUTHENTIC REAL SAMBAR";
-          vDesc = "AI pixel analysis confirmed rich toor dal density, warm golden-orange hue, and solid vegetable biomass! Matches golden reference sambar.";
+          vDesc = `AI verified ${matchScore}% match against Golden Reference Sambar! Rich toor dal density, authentic turmeric warmth, and solid vegetable biomass.`;
           compText = "Real Toor Dal (45%), Drumstick & Veg (40%), Spices (15%)";
           distText = "0 cm (In The Bowl!)";
           document.getElementById('verdictBox').className = "verdict-box";
           applySticker(4); // Suraj stunned face
           playFanfare();
-          showFullscreenMeme(4, "⭐ REAL SAMBAR DETECTED!", "എന്റെ പൊന്നോ... അത്ഭുതം! സാമ്പാർ തന്നെ!", true);
-        } else if (activePreset === 'drumstick' || (!activePreset && realScore >= 38)) {
+          showFullscreenMeme(4, "⭐ CONFIRMED: REAL SAMBAR!", "എന്റെ പൊന്നോ... അത്ഭുതം! സാമ്പാർ തന്നെ!", true);
+        } else if (matchScore >= 38) {
+          // Partial Match / Passable Sambar
+          if (refStatus) {
+            refStatus.innerText = "PARTIAL MATCH (MODERATE DILUTION)";
+            refStatus.style.color = "var(--accent)";
+          }
+          if (refMatchBar) refMatchBar.className = "metric-fill";
+
           trans = (38 + Math.random() * 12).toFixed(1);
           vegCount = "1-2 (Vegetable Fragments)";
           visc = (3.8 + Math.random() * 1.5).toFixed(1);
           guilt = (15 + Math.random() * 15).toFixed(1);
           vTitle = "GRADE B: PASSABLE HOMESTYLE SAMBAR";
-          vDesc = "Moderate dal particulate detected. Some vegetable fiber present. Edible without spiritual crisis, but still leaves something to be desired.";
+          vDesc = `Sample scored ${matchScore}% similarity to Reference Sambar. Contains detectable dal and vegetable fibers, but is significantly diluted compared to golden standard.`;
           compText = "Diluted Dal (30%), Water (60%), Vegetables (10%)";
           distText = "0 cm (Direct Contact)";
           document.getElementById('verdictBox').className = "verdict-box";
           applySticker(1); // "കലങ്ങിയില്ല"
           playFanfare();
           showFullscreenMeme(1, "GRADE B: PASSABLE SAMBAR", "കലങ്ങിയിട്ടുണ്ട്... കുറച്ചൊക്കെ!");
-        } else if (activePreset === 'water' || (!activePreset && realScore < 16)) {
-          trans = "99.9";
-          vegCount = "0 (Sterile)";
-          visc = "1.00";
-          guilt = "100.0";
-          vTitle = "LETHAL REHYDRATION FLUID";
-          vDesc = "Zero dal spectral signature detected. The image appears to be municipal tap water or a non-sambar object. Warden facing immediate tribunal.";
-          compText = "H2O + Traces of Chlorine";
-          distText = "Non-existent";
-          document.getElementById('verdictBox').className = "verdict-box critical";
-          applySticker(2); // "കാവിലമ്മേ ശക്തി തരൂ!"
-          playSadTrombone();
-          showFullscreenMeme(2, "CRITICAL ERROR: 100% TAP WATER", "കാവിലമ്മേ ശക്തി തരൂ!");
-        } else {
-          // Standard Hostel Mess
+        } else if (matchScore >= 16) {
+          // Watery Mess Sambar (Not Real Sambar)
+          if (refStatus) {
+            refStatus.innerText = "FRAUD DETECTED (FAILS REFERENCE)";
+            refStatus.style.color = "var(--red)";
+          }
+          if (refMatchBar) refMatchBar.className = "metric-fill danger";
+
           trans = (92 + Math.random() * 6).toFixed(1);
           vegCount = "0.0 (1 lonely mustard seed)";
           visc = "1.03";
           guilt = "98.6";
           vTitle = "CERTIFIED YELLOW BATHWATER";
-          vDesc = "Photometric transparency index indicates warm tap water with salt, turmeric, and profound existential grief. Dal concentration: sub-atomic.";
+          vDesc = `Failed Reference Sambar comparison (${matchScore}% match). Near-zero dal particulate. Sample consists of warm tap water, turmeric dye, and existential despair.`;
           compText = "Hot Tap Water (98.4%), Tears (1.5%), Turmeric (0.1%)";
           distText = "14.2 km (Nearest market)";
           document.getElementById('verdictBox').className = "verdict-box critical";
           applySticker(0); // "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
           playSadTrombone();
-          showFullscreenMeme(0, "FAILED: 96.8% TRANSPARENT WATER", "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ");
+          showFullscreenMeme(0, "FAILED: NOT REAL SAMBAR", "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ");
+        } else {
+          // Not Sambar At All (Pure water / Foreign object)
+          if (refStatus) {
+            refStatus.innerText = "CRITICAL: NOT SAMBAR LIQUID";
+            refStatus.style.color = "var(--red)";
+          }
+          if (refMatchBar) refMatchBar.className = "metric-fill danger";
+
+          trans = "99.9";
+          vegCount = "0 (Sterile)";
+          visc = "1.00";
+          guilt = "100.0";
+          vTitle = "IMPOSTER DETECTED: NOT SAMBAR";
+          vDesc = `Zero spectral match (${matchScore}% similarity). AI detected zero dal atoms, zero turmeric, and zero vegetable mass. Image is tap water or a non-food item.`;
+          compText = "Municipal H2O / Foreign Object";
+          distText = "Non-existent";
+          document.getElementById('verdictBox').className = "verdict-box critical";
+          applySticker(2); // "കാവിലമ്മേ ശക്തി തരൂ!"
+          playSadTrombone();
+          showFullscreenMeme(2, "CRITICAL ERROR: NOT SAMBAR", "കാവിലമ്മേ ശക്തി തരൂ!");
         }
 
         // Update UI
@@ -1436,8 +1595,8 @@
         document.getElementById('verdictDesc').innerText = vDesc;
         document.getElementById('primaryComp').innerText = compText;
         document.getElementById('muringaDist').innerText = distText;
-        document.getElementById('calorieVal').innerText = (realScore >= 55 || activePreset === 'realsambar') ? "180 kcal (Rich Nutritional Dal)" : ((realScore >= 38 || activePreset === 'drumstick') ? "95 kcal" : "0.4 kcal (Thermodynamically negative)");
-        document.getElementById('leafStat').innerText = (realScore >= 55 || activePreset === 'realsambar') ? "Fresh coriander and ghee tadka present" : "1 floating curry leaf fighting for survival";
+        document.getElementById('calorieVal').innerText = (matchScore >= 65 || activePreset === 'realsambar') ? "180 kcal (Rich Nutritional Dal)" : ((matchScore >= 38 || activePreset === 'drumstick') ? "95 kcal" : "0.4 kcal (Thermodynamically negative)");
+        document.getElementById('leafStat').innerText = (matchScore >= 65 || activePreset === 'realsambar') ? "Fresh coriander and ghee tadka present" : "1 floating curry leaf fighting for survival";
 
         if (stickerContainer) {
           stickerContainer.style.display = 'block';
@@ -1494,11 +1653,13 @@
       }
       const vTitle = document.getElementById('verdictTitle').innerText;
       const trans = document.getElementById('transVal').innerText;
+      const matchV = document.getElementById('refMatchVal').innerText;
       document.getElementById('certBody').innerHTML = `
         This document certifies that the sample evaluated by HydroSambar Spectrometer has been officially designated as:
         <br><br>
         <strong style="font-size: 1.15rem; color: #b91c1c;">${vTitle}</strong>
         <br><br>
+        • <strong>Golden Reference Sambar Match:</strong> ${matchV}<br>
         • <strong>Transparency Index:</strong> ${trans}<br>
         • <strong>Vegetable Mass:</strong> ${document.getElementById('vegVal').innerText}<br>
         • <strong>Flow Viscosity:</strong> ${document.getElementById('viscVal').innerText} cP (Tap Water Baseline: 1.00)<br>
