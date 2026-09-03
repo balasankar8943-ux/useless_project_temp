@@ -575,6 +575,92 @@
       color: #fff;
     }
 
+    /* Sambar Decryption Panel */
+    .sambar-decrypt-box {
+      background: #0f1422;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin-top: 0.75rem;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+    }
+
+    .decrypt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.65rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+
+    .decrypt-title {
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .decrypt-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      background: rgba(255,255,255,0.08);
+      color: var(--muted);
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .decrypt-badge.pass {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .decrypt-badge.fail {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
+
+    .decrypt-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 0.65rem;
+      border-bottom: 1px dashed var(--card-border);
+      padding-bottom: 0.65rem;
+    }
+
+    @media (max-width: 480px) {
+      .decrypt-grid { grid-template-columns: 1fr; }
+    }
+
+    .decrypt-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .decrypt-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+
+    .decrypt-val {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .decrypt-summary {
+      font-size: 0.8rem;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
     /* Absurd Lab Readings */
     .lab-notes {
       border-top: 1px dashed var(--card-border);
@@ -948,6 +1034,35 @@
           </div>
           <div class="metric-bar" style="height: 8px;">
             <div class="metric-fill" id="refMatchBar" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Sambar Identification Decryption Panel -->
+        <div class="sambar-decrypt-box" id="decryptBox">
+          <div class="decrypt-header">
+            <span class="decrypt-title">🔬 SAMBAR IDENTIFICATION DECODER</span>
+            <span class="decrypt-badge" id="decryptBadge">AWAITING IMAGE</span>
+          </div>
+          <div class="decrypt-grid">
+            <div class="decrypt-item">
+              <div class="decrypt-label">Color & Pigment:</div>
+              <div class="decrypt-val" id="decryptColor">--</div>
+            </div>
+            <div class="decrypt-item">
+              <div class="decrypt-label">Liquid Thickness:</div>
+              <div class="decrypt-val" id="decryptDensity">--</div>
+            </div>
+            <div class="decrypt-item">
+              <div class="decrypt-label">Vegetable Biomass:</div>
+              <div class="decrypt-val" id="decryptVeg">--</div>
+            </div>
+            <div class="decrypt-item">
+              <div class="decrypt-label">Benchmark Match:</div>
+              <div class="decrypt-val" id="decryptMatch">--</div>
+            </div>
+          </div>
+          <div class="decrypt-summary" id="decryptSummary">
+            Upload or snapshot an image of your liquid to decrypt its red-orange dal spectrum and viscosity.
           </div>
         </div>
 
@@ -1516,6 +1631,15 @@
           applySticker(4); // Suraj stunned face
           playFanfare();
           showFullscreenMeme(4, "⭐ CONFIRMED: REAL SAMBAR!", "എന്റെ പൊന്നോ... അത്ഭുതം! സാമ്പാർ തന്നെ!", true);
+
+          // Decryption Output
+          document.getElementById('decryptBadge').innerText = "IDENTIFIED: REAL SAMBAR";
+          document.getElementById('decryptBadge').className = "decrypt-badge pass";
+          document.getElementById('decryptColor').innerText = "Thick Reddish-Orange (Toor Dal + Chilli Tadka)";
+          document.getElementById('decryptDensity').innerText = "High Viscous Emulsion (8.4 cP)";
+          document.getElementById('decryptVeg').innerText = "Solid Drumstick & Vegetables Present";
+          document.getElementById('decryptMatch').innerText = `${matchScore}% (Matches Golden Standard)`;
+          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> Verified authentic South Indian sambar! The sample exhibits a <strong>thick red-orange color</strong> with high toor dal density and real vegetable chunks, precisely matching the Golden Reference.`;
         } else if (matchScore >= 38) {
           // Partial Match / Passable Sambar
           if (refStatus) {
@@ -1536,6 +1660,15 @@
           applySticker(1); // "കലങ്ങിയില്ല"
           playFanfare();
           showFullscreenMeme(1, "GRADE B: PASSABLE SAMBAR", "കലങ്ങിയിട്ടുണ്ട്... കുറച്ചൊക്കെ!");
+
+          // Decryption Output
+          document.getElementById('decryptBadge').innerText = "PARTIAL SAMBAR MATCH";
+          document.getElementById('decryptBadge').className = "decrypt-badge";
+          document.getElementById('decryptColor').innerText = "Amber-Orange (Moderate Dal)";
+          document.getElementById('decryptDensity').innerText = "Medium Broth (4.2 cP)";
+          document.getElementById('decryptVeg').innerText = "1-2 Vegetable Fragments";
+          document.getElementById('decryptMatch').innerText = `${matchScore}% (Moderate Dilution)`;
+          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> Partial match. Sample has a passable amber-orange tint and minor dal particles, but lacks the rich thickness and dark red chilli/tamarind depth of authentic temple sambar.`;
         } else if (matchScore >= 16) {
           // Watery Mess Sambar (Not Real Sambar)
           if (refStatus) {
@@ -1556,6 +1689,15 @@
           applySticker(0); // "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
           playSadTrombone();
           showFullscreenMeme(0, "FAILED: NOT REAL SAMBAR", "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ");
+
+          // Decryption Output
+          document.getElementById('decryptBadge').innerText = "NOT REAL SAMBAR";
+          document.getElementById('decryptBadge').className = "decrypt-badge fail";
+          document.getElementById('decryptColor').innerText = "Pale Watery Yellow (Artificial Coloring)";
+          document.getElementById('decryptDensity').innerText = "Thin Watery Runoff (1.03 cP)";
+          document.getElementById('decryptVeg').innerText = "0 Vegetables (Lonely seed only)";
+          document.getElementById('decryptMatch').innerText = `${matchScore}% (Failed Benchmark)`;
+          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> FAILED SAMBAR TEST! The sample completely lacks the <strong>thick red-orange dal body</strong>. It is pale translucent yellow water with salt and turmeric, legally classified as bathwater.`;
         } else {
           // Not Sambar At All (Pure water / Foreign object)
           if (refStatus) {
@@ -1576,6 +1718,15 @@
           applySticker(2); // "കാവിലമ്മേ ശക്തി തരൂ!"
           playSadTrombone();
           showFullscreenMeme(2, "CRITICAL ERROR: NOT SAMBAR", "കാവിലമ്മേ ശക്തി തരൂ!");
+
+          // Decryption Output
+          document.getElementById('decryptBadge').innerText = "IMPOSTER / NOT FOOD";
+          document.getElementById('decryptBadge').className = "decrypt-badge fail";
+          document.getElementById('decryptColor').innerText = "Zero Red-Orange Dal Pigment";
+          document.getElementById('decryptDensity').innerText = "Flat Liquid / Surface (1.00 cP)";
+          document.getElementById('decryptVeg').innerText = "0 (Sterile / Non-Food)";
+          document.getElementById('decryptMatch').innerText = `${matchScore}% (Zero Similarity)`;
+          document.getElementById('decryptSummary').innerHTML = `<strong>DECODED:</strong> REJECTED! Zero optical resemblance to sambar. Lacks red-orange dal chroma, spices, and vegetable biomass. Identified as pure tap water or a non-food item.`;
         }
 
         // Update UI
@@ -1654,16 +1805,18 @@
       const vTitle = document.getElementById('verdictTitle').innerText;
       const trans = document.getElementById('transVal').innerText;
       const matchV = document.getElementById('refMatchVal').innerText;
+      const colorV = document.getElementById('decryptColor').innerText;
+      const densV = document.getElementById('decryptDensity').innerText;
       document.getElementById('certBody').innerHTML = `
         This document certifies that the sample evaluated by HydroSambar Spectrometer has been officially designated as:
         <br><br>
         <strong style="font-size: 1.15rem; color: #b91c1c;">${vTitle}</strong>
         <br><br>
         • <strong>Golden Reference Sambar Match:</strong> ${matchV}<br>
-        • <strong>Transparency Index:</strong> ${trans}<br>
-        • <strong>Vegetable Mass:</strong> ${document.getElementById('vegVal').innerText}<br>
-        • <strong>Flow Viscosity:</strong> ${document.getElementById('viscVal').innerText} cP (Tap Water Baseline: 1.00)<br>
-        • <strong>Official Finding:</strong> Legally insufficient dal content. Sambar is classified as warm seasoned shower water under KTU Hostel Regulation 2026.
+        • <strong>Color & Pigment Decryption:</strong> ${colorV}<br>
+        • <strong>Liquid Thickness:</strong> ${densV}<br>
+        • <strong>Vegetable Biomass:</strong> ${document.getElementById('vegVal').innerText}<br>
+        • <strong>Official Finding:</strong> ${document.getElementById('verdictDesc').innerText}
       `;
       certModal.classList.add('open');
     });
