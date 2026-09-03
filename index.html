@@ -836,7 +836,7 @@
         <!-- Live Demo Presets (Zero food needed on stage!) -->
         <div style="font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem;">STAGE PRESET SAMPLES:</div>
         <div class="preset-strip">
-          <div class="preset-pill active" data-preset="hostel">🧪 Standard Hostel Mess Sambar (98% Water)</div>
+          <div class="preset-pill" data-preset="hostel">🧪 Standard Hostel Mess Sambar (98% Water)</div>
           <div class="preset-pill" data-preset="realsambar">⭐ Certified Real Sambar (Golden Reference)</div>
           <div class="preset-pill" data-preset="drumstick">🌿 The Drumstick Miracle (Solid Biomass)</div>
           <div class="preset-pill" data-preset="water">🚰 Municipal Tap Water (Control Sample)</div>
@@ -853,16 +853,16 @@
 
       <div class="report-wrap">
         <!-- Main Diagnosis Box -->
-        <div class="verdict-box critical" id="verdictBox">
+        <div class="verdict-box" id="verdictBox">
           <div class="verdict-layout">
             <div class="verdict-text-group">
               <div class="verdict-label">Official Departmental Classification</div>
-              <div class="verdict-main" id="verdictTitle">Awaiting Liquid Sample</div>
+              <div class="verdict-main" id="verdictTitle">Awaiting Image Sample</div>
               <div class="verdict-desc" id="verdictDesc">
-                Point camera at hostel mess bowl or tap a preset to calculate photonic transparency, drumstick probability, and tears-to-dal ratio.
+                Upload a photo of your mess food 📁 or point camera and tap "AUDIT LIQUID" to evaluate dal density and vegetables.
               </div>
             </div>
-            <div class="verdict-sticker-box" id="stickerContainer" title="Click to cycle meme reactions">
+            <div class="verdict-sticker-box" id="stickerContainer" style="display: none;" title="Click to cycle meme reactions">
               <img src="assets/enthino_sambar.jpg" id="verdictStickerImg" alt="Reaction Sticker" class="verdict-sticker">
               <div class="sticker-sub" id="stickerSub">എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ</div>
               <div class="sticker-hint">Tap to switch</div>
@@ -992,6 +992,7 @@
     let currentFacingMode = 'environment'; // default to back camera on smartphones
     let streamActive = false;
     let lastAudioVerdict = "";
+    let hasImageSample = false;
 
     // Malayalam Meme Reaction Stickers
     const STICKERS = [
@@ -1139,11 +1140,10 @@
           });
           video.srcObject = stream;
           streamActive = true;
-          document.getElementById('camLabel').innerText = currentFacingMode === 'environment' ? "REAR CAM" : "FRONT CAM";
+          document.getElementById('camLabel').innerText = currentFacingMode === 'environment' ? "REAR CAM ACTIVE" : "FRONT CAM ACTIVE";
         } catch (err) {
-          console.warn("Camera blocked or unavailable, running in preset simulator mode.", err);
-          document.getElementById('camLabel').innerText = "SIMULATOR ACTIVE";
-          drawPreset('hostel');
+          console.warn("Camera blocked or unavailable.", err);
+          document.getElementById('camLabel').innerText = "UPLOAD PHOTO OR ALLOW CAM";
         }
       }
     }
@@ -1169,6 +1169,7 @@
             ctx.drawImage(img, 0, 0);
             video.style.display = 'none';
             canvas.style.display = 'block';
+            hasImageSample = true;
             document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
             document.getElementById('camLabel').innerText = "CUSTOM PHOTO LOADED";
             runAudit(true);
@@ -1246,6 +1247,7 @@
       pill.addEventListener('click', () => {
         document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
+        hasImageSample = true;
         drawPreset(pill.dataset.preset);
         if (navigator.vibrate) navigator.vibrate(20);
         runAudit();
@@ -1437,16 +1439,43 @@
         document.getElementById('calorieVal').innerText = (realScore >= 55 || activePreset === 'realsambar') ? "180 kcal (Rich Nutritional Dal)" : ((realScore >= 38 || activePreset === 'drumstick') ? "95 kcal" : "0.4 kcal (Thermodynamically negative)");
         document.getElementById('leafStat').innerText = (realScore >= 55 || activePreset === 'realsambar') ? "Fresh coriander and ghee tadka present" : "1 floating curry leaf fighting for survival";
 
+        if (stickerContainer) {
+          stickerContainer.style.display = 'block';
+        }
+
         lastAudioVerdict = `${vTitle}. ${vDesc}`;
       }, 450);
     }
 
-    auditBtn.addEventListener('click', () => runAudit());
+    auditBtn.addEventListener('click', () => {
+      // 1. If live camera is actively streaming, snap the current frame as the image sample!
+      if (video.style.display !== 'none' && video.videoWidth > 0 && streamActive) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        video.style.display = 'none';
+        canvas.style.display = 'block';
+        hasImageSample = true;
+        document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+        document.getElementById('camLabel').innerText = "CAMERA PHOTO CAPTURED";
+        runAudit(false);
+      } else if (hasImageSample) {
+        runAudit(false);
+      } else {
+        // No image provided yet!
+        playBeep(440, 0.12);
+        document.getElementById('verdictTitle').innerText = "AWAITING IMAGE SAMPLE";
+        document.getElementById('verdictDesc').innerText = "⚠️ Please upload a photo of your food 📁 or allow camera access to take a picture before auditing!";
+        document.getElementById('camLabel').innerText = "NO SAMPLE DETECTED";
+        if (navigator.vibrate) navigator.vibrate([80, 80]);
+      }
+    });
 
     // Speech Output
     speakBtn.addEventListener('click', () => {
-      if (!lastAudioVerdict) {
-        lastAudioVerdict = "Hostel mess sambar audit. 98.4 percent water detected. Drumstick not found.";
+      if (!lastAudioVerdict || !hasImageSample) {
+        alert("Please upload or capture a sambar image first!");
+        return;
       }
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -1459,6 +1488,10 @@
 
     // Certificate Modal
     certBtn.addEventListener('click', () => {
+      if (!lastAudioVerdict || !hasImageSample) {
+        alert("Please upload or capture a sambar image first!");
+        return;
+      }
       const vTitle = document.getElementById('verdictTitle').innerText;
       const trans = document.getElementById('transVal').innerText;
       document.getElementById('certBody').innerHTML = `
