@@ -554,6 +554,125 @@
       color: #fff;
     }
 
+    /* Fullscreen Meme Overlay */
+    .fullscreen-meme-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 10, 16, 0.95);
+      backdrop-filter: blur(14px);
+      z-index: 300;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .fullscreen-meme-overlay.active {
+      display: flex;
+      animation: screenStrobe 0.22s ease-out;
+    }
+
+    @keyframes screenStrobe {
+      0% { background: rgba(239, 68, 68, 0.5); }
+      100% { background: rgba(8, 10, 16, 0.95); }
+    }
+
+    .fullscreen-meme-overlay.success.active {
+      animation: screenStrobeGreen 0.22s ease-out;
+    }
+
+    @keyframes screenStrobeGreen {
+      0% { background: rgba(16, 185, 129, 0.5); }
+      100% { background: rgba(8, 10, 16, 0.95); }
+    }
+
+    .meme-version-tag {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--accent);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .meme-card-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 480px;
+      width: 100%;
+      animation: popBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    @keyframes popBounce {
+      0% { transform: scale(0.15) rotate(-10deg); opacity: 0; }
+      75% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .fullscreen-sticker-img {
+      width: min(72vw, 290px);
+      height: min(72vw, 290px);
+      object-fit: cover;
+      border-radius: 16px;
+      border: 4px solid #fff;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.95), 0 0 40px var(--accent-glow);
+      margin-bottom: 1.25rem;
+      background: #fff;
+    }
+
+    .meme-speech-bubble {
+      background: #fff;
+      color: #0b0d13;
+      padding: 0.85rem 1.4rem;
+      border-radius: 12px;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 900;
+      margin-bottom: 0.8rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      position: relative;
+      line-height: 1.35;
+    }
+
+    .meme-speech-bubble::after {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 0 10px 10px 10px;
+      border-style: solid;
+      border-color: transparent transparent #fff transparent;
+    }
+
+    .meme-verdict-title {
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+
+    .meme-dismiss-hint {
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      margin-top: 1rem;
+    }
+
     /* Modal / Share Card */
     .certificate-modal {
       position: fixed;
@@ -718,6 +837,7 @@
         <div style="font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem;">STAGE PRESET SAMPLES:</div>
         <div class="preset-strip">
           <div class="preset-pill active" data-preset="hostel">🧪 Standard Hostel Mess Sambar (98% Water)</div>
+          <div class="preset-pill" data-preset="realsambar">⭐ Certified Real Sambar (Golden Reference)</div>
           <div class="preset-pill" data-preset="drumstick">🌿 The Drumstick Miracle (Solid Biomass)</div>
           <div class="preset-pill" data-preset="water">🚰 Municipal Tap Water (Control Sample)</div>
         </div>
@@ -826,6 +946,17 @@
     </section>
   </main>
 
+  <!-- Fullscreen Meme Reaction Overlay -->
+  <div class="fullscreen-meme-overlay" id="fullscreenMeme">
+    <div class="meme-version-tag">HYDRO-SAMBAR v3.8 [KTU SPECIAL AUDIT EDITION]</div>
+    <div class="meme-card-hero">
+      <div class="meme-verdict-title" id="memeVerdictTitle">CRITICAL DILUTION DETECTED</div>
+      <img src="assets/enthino_sambar.jpg" id="fullscreenStickerImg" class="fullscreen-sticker-img" alt="Reaction Meme">
+      <div class="meme-speech-bubble" id="fullscreenQuote">"എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"</div>
+      <div class="meme-dismiss-hint">⚡ Tap anywhere or press [SPACE] to view full lab report</div>
+    </div>
+  </div>
+
   <!-- Official Fraud Certificate Modal -->
   <div class="certificate-modal" id="certModal">
     <div class="cert-card">
@@ -899,6 +1030,31 @@
       });
     }
 
+    // Fullscreen Meme Overlay Controls
+    const fullscreenMeme = document.getElementById('fullscreenMeme');
+    const fullscreenStickerImg = document.getElementById('fullscreenStickerImg');
+    const fullscreenQuote = document.getElementById('fullscreenQuote');
+    const memeVerdictTitle = document.getElementById('memeVerdictTitle');
+
+    function showFullscreenMeme(stickerIdx, title, quote, isSuccess = false) {
+      applySticker(stickerIdx);
+      if (fullscreenStickerImg) fullscreenStickerImg.src = STICKERS[stickerIdx].src;
+      if (fullscreenQuote) fullscreenQuote.innerText = quote || STICKERS[stickerIdx].sub;
+      if (memeVerdictTitle) memeVerdictTitle.innerText = title;
+      if (fullscreenMeme) {
+        fullscreenMeme.className = isSuccess ? "fullscreen-meme-overlay success active" : "fullscreen-meme-overlay active";
+      }
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+
+    function hideFullscreenMeme() {
+      if (fullscreenMeme) fullscreenMeme.classList.remove('active');
+    }
+
+    if (fullscreenMeme) {
+      fullscreenMeme.addEventListener('click', hideFullscreenMeme);
+    }
+
     // Web Audio Sound Synthesizer (Zero asset dependencies!)
     function playBeep(freq = 880, duration = 0.08) {
       try {
@@ -915,21 +1071,58 @@
       } catch (e) {}
     }
 
-    function playFailureHorn() {
+    function playSadTrombone() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.linearRampToValueAtTime(80, now + 0.5);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.5);
+        const notes = [
+          { f: 233.08, d: 0.28 },
+          { f: 220.00, d: 0.28 },
+          { f: 207.65, d: 0.28 },
+          { f: 196.00, d: 0.7, bend: 172.0 }
+        ];
+        let now = audioCtx.currentTime;
+        notes.forEach(n => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(n.f, now);
+          if (n.bend) {
+            osc.frequency.linearRampToValueAtTime(n.bend, now + n.d);
+          }
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + n.d);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + n.d);
+          now += n.d + 0.04;
+        });
+      } catch (e) {}
+    }
+
+    function playFanfare() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [
+          { f: 261.63, d: 0.12 },
+          { f: 329.63, d: 0.12 },
+          { f: 392.00, d: 0.12 },
+          { f: 523.25, d: 0.45 }
+        ];
+        let now = audioCtx.currentTime;
+        notes.forEach(n => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(n.f, now);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + n.d);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + n.d);
+          now += n.d + 0.03;
+        });
       } catch (e) {}
     }
 
@@ -1036,6 +1229,12 @@
         ctx.fillRect(0, 0, 640, 480);
         ctx.fillStyle = "rgba(255,255,255,0.1)";
         ctx.fillRect(0, 0, 640, 240);
+      } else if (type === 'realsambar') {
+        const refImg = new Image();
+        refImg.onload = () => {
+          ctx.drawImage(refImg, 0, 0, canvas.width, canvas.height);
+        };
+        refImg.src = "assets/real_sambar.jpg";
       }
     }
 
@@ -1098,7 +1297,20 @@
         let trans, vegCount, visc, guilt;
         let vTitle, vDesc, compText, distText;
 
-        if (activePreset === 'drumstick') {
+        if (activePreset === 'realsambar') {
+          trans = 13.5;
+          vegCount = "6+ (Drumstick, Shallots, Carrot, Chilli)";
+          visc = "8.6";
+          guilt = 0.0;
+          vTitle = "GRADE AAA: GOLDEN HERITAGE SAMBAR";
+          vDesc = "Spectrometric match confirms authentic Kerala temple-grade sambar! Dense toor dal broth heavily loaded with drumstick, ghee aroma, and coriander.";
+          compText = "Real Toor Dal (45%), Drumstick & Veg (40%), Spices (15%)";
+          distText = "0 cm (In The Ladle!)";
+          document.getElementById('verdictBox').className = "verdict-box";
+          applySticker(4); // Suraj stunned face
+          playFanfare();
+          showFullscreenMeme(4, "⭐ GOLDEN REFERENCE: REAL SAMBAR!", "എന്റെ പൊന്നോ... അത്ഭുതം! സാമ്പാർ തന്നെ!", true);
+        } else if (activePreset === 'drumstick') {
           trans = 44.2;
           vegCount = "1 (Muringakka)";
           visc = "4.2";
@@ -1109,6 +1321,8 @@
           distText = "0 cm (Direct Contact)";
           document.getElementById('verdictBox').className = "verdict-box";
           applySticker(4); // Suraj stunned face
+          playFanfare();
+          showFullscreenMeme(4, "GRADE A: DRUMSTICK SIGHTING", "മുരിങ്ങക്ക കണ്ടെത്തി! ഭാഗ്യം!", true);
         } else if (activePreset === 'water') {
           trans = 99.9;
           vegCount = "0 (Sterile)";
@@ -1120,7 +1334,8 @@
           distText = "Non-existent";
           document.getElementById('verdictBox').className = "verdict-box critical";
           applySticker(2); // "കാവിലമ്മേ ശക്തി തരൂ!"
-          playFailureHorn();
+          playSadTrombone();
+          showFullscreenMeme(2, "CRITICAL ERROR: 100% TAP WATER", "കാവിലമ്മേ ശക്തി തരൂ!");
         } else {
           // Standard Hostel Mess
           trans = 98.4;
@@ -1133,7 +1348,8 @@
           distText = "14.2 km (Nearest market)";
           document.getElementById('verdictBox').className = "verdict-box critical";
           applySticker(0); // "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
-          playFailureHorn();
+          playSadTrombone();
+          showFullscreenMeme(0, "FAILED: 98.4% TRANSPARENT WATER", "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ");
         }
 
         // Update UI
@@ -1197,6 +1413,13 @@
 
     // Keyboard Shortcuts for Laptops
     window.addEventListener('keydown', (e) => {
+      if (fullscreenMeme && fullscreenMeme.classList.contains('active')) {
+        if (e.code === 'Space' || e.code === 'Escape' || e.code === 'Enter') {
+          e.preventDefault();
+          hideFullscreenMeme();
+          return;
+        }
+      }
       if (e.code === 'Space') {
         e.preventDefault();
         runAudit();
