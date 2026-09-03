@@ -1734,64 +1734,87 @@
           document.getElementById('decryptVeg').innerText = "Solid Drumstick, Shallots & Veg Chunks";
           document.getElementById('decryptMatch').innerText = `${matchScore}% (Matches Golden Benchmark)`;
           document.getElementById('decryptSummary').innerHTML = "<strong>DECODED:</strong> Verified authentic South Indian sambar! Sample possesses the signature <strong>thick red-orange color</strong>, high toor dal density, and real vegetable chunks.";
-        } else if (matchScore >= 16 || activePreset === 'hostel') {
-          // Watery Mess Sambar (Fails)
-          if (refStatus) {
-            refStatus.innerText = "FRAUD DETECTED (FAILS REFERENCE)";
-            refStatus.style.color = "var(--red)";
-          }
-          if (refMatchBar) refMatchBar.className = "metric-fill danger";
-
-          trans = (92 + Math.random() * 6).toFixed(1);
-          vegCount = "0.0 (1 lonely mustard seed)";
-          visc = "1.03";
-          guilt = "98.6";
-          vTitle = "CERTIFIED YELLOW BATHWATER";
-          vDesc = `Failed Reference Sambar comparison (${matchScore}% match). Near-zero dal particulate. Sample consists of warm tap water, turmeric dye, and existential despair.`;
-          compText = "Hot Tap Water (98.4%), Tears (1.5%), Turmeric (0.1%)";
-          distText = "14.2 km (Nearest market)";
-          document.getElementById('verdictBox').className = "verdict-box critical";
-          applySticker(0); // "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
-          playSadTrombone();
-          showFullscreenMeme(0, "FAILED: NOT REAL SAMBAR", "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ");
-
-          // Decryption Output
-          document.getElementById('decryptBadge').innerText = "NOT REAL SAMBAR";
-          document.getElementById('decryptBadge').className = "decrypt-badge fail";
-          document.getElementById('decryptColor').innerText = "Pale Watery Yellow (Artificial Coloring)";
-          document.getElementById('decryptDensity').innerText = "Thin Watery Runoff (1.03 cP)";
-          document.getElementById('decryptVeg').innerText = "0 Vegetables (Lonely seed only)";
-          document.getElementById('decryptMatch').innerText = `${matchScore}% (Failed Benchmark)`;
-          document.getElementById('decryptSummary').innerHTML = "<strong>DECODED:</strong> FAILED SAMBAR TEST! The sample completely lacks the <strong>thick red-orange dal body</strong>. It is pale translucent yellow water with salt and turmeric, legally classified as bathwater.";
         } else {
-          // Not Sambar At All (Pure water / Foreign object)
+          // NEITHER SAMBAR NOR MORU CURRY -> REJECT AND ROAST SAVAGELY!
+          const ROAST_MESSAGES = [
+            {
+              title: "🔥 SAVAGELY ROASTED: NEITHER SAMBAR NOR MORU!",
+              memeTitle: "എന്തോന്നാടെ ഇത്?!",
+              memeDesc: "സാമ്പാറും അല്ല, മോരുകറിയും അല്ല! ഇതിപ്പോ എന്തോന്നാടെ കാട്ടി വെച്ചേക്കുന്നെ?!",
+              desc: "അളിയാ... ഇത് സാമ്പാറും അല്ല, മോരുകറിയും അല്ല! Spectrometer melted trying to find dal atoms. Did you point the camera at your hostel bedsheet or your own face?! Go wash your plate first!",
+              sticker: 2, // "കാവിലമ്മേ ശക്തി തരൂ!"
+              comp: "0% Sambar, 0% Moru Curry, 100% Shuddh Fraud",
+              visc: "0.01 cP (Not Even Food)",
+              veg: "Error 404: Vegetable Not Found in Universe",
+              guilt: "100.0"
+            },
+            {
+              title: "🔥 CULINARY ROAST: WARDEN SUSPENDED YOUR MESS PASS",
+              memeTitle: "കാവിലമ്മേ ശക്തി തരൂ!",
+              memeDesc: "ഇതിലൊരു തരി പരിപ്പോ മോരോ ഇല്ലല്ലോ ഭഗവാനേ! ചതിച്ചതാണേ!",
+              desc: "AI Optical Sensor filed a suo motu case at Gandhinagar Police Station! Zero toor dal, zero tamarind, zero buttermilk. Certified alien entity trying to impersonate South Indian cuisine.",
+              sticker: 2, // "കാവിലമ്മേ"
+              comp: "Hostel Existential Despair (99%), Delusion (1%)",
+              visc: "1.00 cP (Drain Water)",
+              veg: "Negative Biomass (-4.2 kg)",
+              guilt: "100.0"
+            },
+            {
+              title: "🔥 ROASTED: KTU FOOD AUDIT TRIBUNAL SUMMONS",
+              memeTitle: "എന്തിനോ വേണ്ടി ജീവിക്കുന്ന സാമ്പിൾ!",
+              memeDesc: "ഇത് തിന്നാൻ കൊള്ളില്ല, കുളിക്കാൻ കൊള്ളില്ല!",
+              desc: "Spectrometric finding: Candidate submitted a non-sambar, non-moru sample. Suspected to be lukewarm tap water, leftover tea, or an empty steel plate. Penalty: 3 backlogs and mess cleaning duty.",
+              sticker: 0, // "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
+              comp: "Warm Water (98.4%), Tears (1.5%), Dust Particles (0.1%)",
+              visc: "1.02 cP",
+              veg: "0 Vegetables (Lonely Mustard Seed)",
+              guilt: "99.9"
+            },
+            {
+              title: "🔥 BRUTAL REJECTION: DID YOU SCAN YOUR SHOE?!",
+              memeTitle: "കലങ്ങിയില്ല... ഒരു തരി പോലും!",
+              memeDesc: "ഇത് തിന്നാൻ കൊള്ളില്ല, കുളിക്കാൻ കൊള്ളില്ല!",
+              desc: "Spectrometer detected zero optical dal or curd signatures. You literally pointed the camera at a random non-curry object and expected food! Go directly to hostel canteen.",
+              sticker: 1, // "കലങ്ങിയില്ല"
+              comp: "Pure Optical Hallucination (100%)",
+              visc: "0.00 cP",
+              veg: "0 Vegetables (Sterile Object)",
+              guilt: "100.0"
+            }
+          ];
+
+          const roast = ROAST_MESSAGES[Math.floor(Math.random() * ROAST_MESSAGES.length)];
+
           if (refStatus) {
-            refStatus.innerText = "CRITICAL: NOT SAMBAR LIQUID";
+            refStatus.innerText = "🔥 REJECTED & ROASTED (NOT SAMBAR OR MORU)";
             refStatus.style.color = "var(--red)";
           }
-          if (refMatchBar) refMatchBar.className = "metric-fill danger";
+          if (refMatchBar) {
+            refMatchBar.className = "metric-fill danger";
+            refMatchBar.style.width = `${Math.max(matchScore, 4)}%`;
+          }
 
-          trans = "99.9";
-          vegCount = "0 (Sterile)";
-          visc = "1.00";
-          guilt = "100.0";
-          vTitle = "IMPOSTER DETECTED: NOT SAMBAR";
-          vDesc = `Zero spectral match (${matchScore}% similarity). AI detected zero dal atoms, zero turmeric, and zero vegetable mass. Image is tap water or a non-food item.`;
-          compText = "Municipal H2O / Foreign Object";
-          distText = "Non-existent";
+          trans = (97 + Math.random() * 2.9).toFixed(1);
+          vegCount = roast.veg;
+          visc = roast.visc;
+          guilt = roast.guilt;
+          vTitle = roast.title;
+          vDesc = roast.desc;
+          compText = roast.comp;
+          distText = "Infinitely Far (Galaxy Away)";
           document.getElementById('verdictBox').className = "verdict-box critical";
-          applySticker(2); // "കാവിലമ്മേ ശക്തി തരൂ!"
+          applySticker(roast.sticker);
           playSadTrombone();
-          showFullscreenMeme(2, "CRITICAL ERROR: NOT SAMBAR", "കാവിലമ്മേ ശക്തി തരൂ!");
+          showFullscreenMeme(roast.sticker, roast.memeTitle, roast.memeDesc);
 
           // Decryption Output
-          document.getElementById('decryptBadge').innerText = "IMPOSTER / NOT FOOD";
+          document.getElementById('decryptBadge').innerText = "🔥 SAVAGELY ROASTED";
           document.getElementById('decryptBadge').className = "decrypt-badge fail";
-          document.getElementById('decryptColor').innerText = "Zero Red-Orange Dal Pigment";
-          document.getElementById('decryptDensity').innerText = "Flat Liquid / Surface (1.00 cP)";
-          document.getElementById('decryptVeg').innerText = "0 (Sterile / Non-Food)";
-          document.getElementById('decryptMatch').innerText = `${matchScore}% (Zero Similarity)`;
-          document.getElementById('decryptSummary').innerHTML = "<strong>DECODED:</strong> REJECTED! Zero optical resemblance to sambar. Lacks red-orange dal chroma, spices, and vegetable biomass. Identified as pure tap water or a non-food item.";
+          document.getElementById('decryptColor').innerText = "Alien Hue (Zero Dal, Zero Curd)";
+          document.getElementById('decryptDensity').innerText = "Not A Curry (Physical Catastrophe)";
+          document.getElementById('decryptVeg').innerText = "0 Vegetables (Non-Food Detected)";
+          document.getElementById('decryptMatch').innerText = `${matchScore}% (Absolute Rejection)`;
+          document.getElementById('decryptSummary').innerHTML = `<strong>🔥 SAVAGE ROAST:</strong> ${roast.desc}`;
         }
 
         // Update UI
