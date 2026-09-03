@@ -743,8 +743,8 @@
               </div>
             </div>
             <div class="verdict-sticker-box" id="stickerContainer" title="Click to cycle meme reactions">
-              <img src="assets/kalangiyilla.jpg" id="verdictStickerImg" alt="Reaction Sticker" class="verdict-sticker">
-              <div class="sticker-sub" id="stickerSub">കലങ്ങിയില്ല</div>
+              <img src="assets/enthino_sambar.jpg" id="verdictStickerImg" alt="Reaction Sticker" class="verdict-sticker">
+              <div class="sticker-sub" id="stickerSub">എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ</div>
               <div class="sticker-hint">Tap to switch</div>
             </div>
           </div>
@@ -831,7 +831,7 @@
     <div class="cert-card">
       <div class="cert-stamps-wrap">
         <div class="cert-stamp">CERTIFIED DILUTED</div>
-        <img src="assets/kavilamme.jpg" id="certStickerImg" class="cert-sticker-stamp" alt="Reaction Stamp">
+        <img src="assets/enthino_sambar.jpg" id="certStickerImg" class="cert-sticker-stamp" alt="Reaction Stamp">
       </div>
       <div class="cert-title">Department of Culinary Fraud</div>
       <div class="cert-body" id="certBody">
@@ -864,6 +864,7 @@
 
     // Malayalam Meme Reaction Stickers
     const STICKERS = [
+      { src: "assets/enthino_sambar.jpg", sub: "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ", text: "Boiling in vain without vegetables or purpose." },
       { src: "assets/kalangiyilla.jpg", sub: "കലങ്ങിയില്ല", text: "Dal has not dissolved in liquid!" },
       { src: "assets/kavilamme.jpg", sub: "കാവിലമ്മേ ശക്തി തരൂ!", text: "Praying for digestive fortitude." },
       { src: "assets/anjaneya.jpg", sub: "ആഞ്ജനേയ സ്വാമി...", text: "Existential defeat level critical." },
@@ -1107,7 +1108,7 @@
           compText = "Real Toor Dal & Drumstick Biomass";
           distText = "0 cm (Direct Contact)";
           document.getElementById('verdictBox').className = "verdict-box";
-          applySticker(3); // Suraj stunned face
+          applySticker(4); // Suraj stunned face
         } else if (activePreset === 'water') {
           trans = 99.9;
           vegCount = "0 (Sterile)";
@@ -1118,7 +1119,7 @@
           compText = "H2O + Traces of Chlorine";
           distText = "Non-existent";
           document.getElementById('verdictBox').className = "verdict-box critical";
-          applySticker(1); // "കാവിലമ്മേ ശക്തി തരൂ!"
+          applySticker(2); // "കാവിലമ്മേ ശക്തി തരൂ!"
           playFailureHorn();
         } else {
           // Standard Hostel Mess
@@ -1131,7 +1132,7 @@
           compText = "Hot Tap Water (98.4%), Tears (1.5%), Turmeric (0.1%)";
           distText = "14.2 km (Nearest market)";
           document.getElementById('verdictBox').className = "verdict-box critical";
-          applySticker(0); // "കലങ്ങിയില്ല"
+          applySticker(0); // "എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ"
           playFailureHorn();
         }
 
