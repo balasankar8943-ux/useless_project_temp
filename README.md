@@ -75,14 +75,14 @@ python -m http.server 8000
 For Software:
 
 # Screenshots (Add at least 3)
-![Screenshot1](assets/sambar_ref1.jpg)
-*Screenshot 1: Authentic Sambar Benchmark (Traditional Muringakka Feast) showing the thick red-orange tamarind and toor dal profile required for Grade AAA certification.*
+![Screenshot1](assets/screenshot1_sambar.png)
+*Screenshot 1: Authentic Sambar Benchmark (100% Match) showing Grade AAA classification, Suraj Venjaramoodu meme reaction, and thick red-orange dal viscosity decoding.*
 
-![Screenshot2](assets/hostel_idli_sambar.jpg)
-*Screenshot 2: Lethal Hostel Mess Idli Sambar detected in real time, triggering the savage Warden Curse and 88.5% transparency dilution failure.*
+![Screenshot2](assets/screenshot2_moru_curry.png)
+*Screenshot 2: Moru Curry / Pulissery Imposter Detection (18% Match) successfully catching bright yellow buttermilk and displaying Malayalam reaction ("കലങ്ങിയില്ല").*
 
-![Screenshot3](assets/enthino_sambar.jpg)
-*Screenshot 3: Fullscreen comedic reaction pop-up featuring Salim Kumar ("എന്തിനോ വേണ്ടി തിളയ്ക്കുന്ന സാമ്പാർ") with sad trombone audio.*
+![Screenshot3](assets/screenshot3_hostel_idli.png)
+*Screenshot 3: Lethal Crime - Hostel Mess Idli Sambar Disaster detected in real time, triggering 14% dilution failure, Warden Curse, and Salim Kumar meme.*
 
 # Diagrams
 ```mermaid
